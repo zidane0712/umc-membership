@@ -3,11 +3,13 @@ import mongoose, { Document, Schema } from "mongoose";
 
 // [DEFINITION]
 export interface IAddress {
-  street: string;
+  number: string;
+  street?: string;
+  subdivision?: string;
   barangay: string;
-  town: string;
-  city: string;
+  municipality: string;
   province: string;
+  postalCode: number;
 }
 
 export interface ILocal extends Document {
@@ -18,11 +20,13 @@ export interface ILocal extends Document {
 // [SCHEMA]
 const addressSchema = new Schema<IAddress>(
   {
+    number: { type: String, required: true },
     street: { type: String },
-    barangay: { type: String },
-    town: { type: String },
-    city: { type: String },
-    province: { type: String },
+    subdivision: { type: String },
+    barangay: { type: String, required: true },
+    municipality: { type: String, required: true },
+    province: { type: String, required: true },
+    postalCode: { type: Number, required: true },
   },
   { _id: false }
 );

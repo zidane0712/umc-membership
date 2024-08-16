@@ -8,11 +8,13 @@ import Local from "./Local";
 
 // [DEFINITION]
 export interface IAddress {
-  street: string;
+  number: string;
+  street?: string;
+  subdivision?: string;
   barangay: string;
-  town: string;
-  city: string;
+  municipality: string;
   province: string;
+  postalCode: number;
 }
 
 export interface IBaptismConfirmation {
@@ -57,19 +59,21 @@ export interface IMembership extends Document {
   organization: "umm" | "umwscs" | "umyaf" | "umyf" | "umcf";
   ministries?: mongoose.Types.ObjectId[];
   council?: mongoose.Types.ObjectId[];
-  annual?: mongoose.Types.ObjectId[];
+  annualConference?: mongoose.Types.ObjectId[];
   district?: mongoose.Types.ObjectId[];
-  local?: mongoose.Types.ObjectId[];
+  localChurch?: mongoose.Types.ObjectId[];
 }
 
 // [SCHEMA]
 const addressSchema = new Schema<IAddress>(
   {
+    number: { type: String, required: true },
     street: { type: String },
-    barangay: { type: String },
-    town: { type: String },
-    city: { type: String },
-    province: { type: String },
+    subdivision: { type: String },
+    barangay: { type: String, required: true },
+    municipality: { type: String, required: true },
+    province: { type: String, required: true },
+    postalCode: { type: Number, required: true },
   },
   { _id: false }
 );
@@ -159,9 +163,9 @@ const membershipSchema = new Schema<IMembership>({
   },
   ministries: [{ type: Schema.Types.ObjectId, ref: "Ministry" }],
   council: [{ type: Schema.Types.ObjectId, ref: "Council" }],
-  annual: [{ type: Schema.Types.ObjectId, ref: "Annual" }],
+  annualConference: [{ type: Schema.Types.ObjectId, ref: "Annual" }],
   district: [{ type: Schema.Types.ObjectId, ref: "District" }],
-  local: [{ type: Schema.Types.ObjectId, ref: "Local" }],
+  localChurch: [{ type: Schema.Types.ObjectId, ref: "Local" }],
 });
 
 // [PRE-SAVE MIDDLEWARE]

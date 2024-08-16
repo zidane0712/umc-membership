@@ -3,12 +3,12 @@ import mongoose, { Document, Schema } from "mongoose";
 
 // [DEFINITION]
 export interface IDistrict extends Document {
-  district: string;
+  name: string;
 }
 
 // [SCHEMA]
 const districtSchema = new Schema<IDistrict>({
-  district: { type: String, required: true },
+  name: { type: String, required: true },
 });
 
 // [MODEL]
