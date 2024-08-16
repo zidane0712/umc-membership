@@ -8,6 +8,7 @@ dotenv.config();
 
 // [IMPORTS]
 import membershipRoutes from "./routes/membershipRoutes";
+import annualRoutes from "./routes/annualRoutes";
 
 // [APP CONFIGURATION]
 const app: Application = express();
@@ -29,6 +30,7 @@ mongoose
 
 // [ROUTES]
 app.use("/membership", membershipRoutes);
+app.use("/annual", annualRoutes);
 
 // [LISTENER]
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

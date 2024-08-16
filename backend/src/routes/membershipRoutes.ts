@@ -3,7 +3,7 @@ import express from "express";
 
 // [IMPORTS]
 import {
-  getMemberships,
+  getAllMemberships,
   createMembership,
 } from "../controllers/membershipController";
 
@@ -11,8 +11,7 @@ import {
 const router = express.Router();
 
 // [ROUTES]
-// Route to get all membership and post membership
-router.route("/").get(getMemberships).post(createMembership);
+router.route("/").get(getAllMemberships).post(createMembership);
 
 // [EXPORT]
 export default router;

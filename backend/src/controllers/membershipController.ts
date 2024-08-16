@@ -2,8 +2,10 @@
 import { Request, Response } from "express";
 import Membership from "../models/Membership";
 
-// [FUNCTIONS]
-export const getMemberships = async (req: Request, res: Response) => {
+// [CONTROLLERS]
+
+// Gets all membership
+export const getAllMemberships = async (req: Request, res: Response) => {
   try {
     const memberships = await Membership.find();
     res.json(memberships);
@@ -16,6 +18,7 @@ export const getMemberships = async (req: Request, res: Response) => {
   }
 };
 
+// Create membership
 export const createMembership = async (req: Request, res: Response) => {
   const membership = new Membership(req.body);
   try {
