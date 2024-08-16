@@ -6,7 +6,8 @@ import cors from "cors";
 
 dotenv.config();
 
-// [IMPORTS]
+// [IMPORTS]\
+import { errorHandler } from "./middleware/errorHandler";
 import membershipRoutes from "./routes/membershipRoutes";
 import annualRoutes from "./routes/annualRoutes";
 
@@ -31,6 +32,9 @@ mongoose
 // [ROUTES]
 app.use("/membership", membershipRoutes);
 app.use("/annual", annualRoutes);
+
+// Error handling middleware
+app.use(errorHandler);
 
 // [LISTENER]
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
