@@ -1,6 +1,5 @@
 // [DEPENDENCIES]
 import express, { Request, Response, NextFunction } from "express";
-
 import Joi from "joi";
 
 // [IMPORTS]
@@ -15,6 +14,8 @@ import {
   updateAnnual,
   deleteAnnual,
 } from "../controllers/annualController";
+import { errorHandler } from "../middleware/errorHandler";
+import asyncHandler from "../utils/asyncHandler";
 
 // [JOI MIDDLEWARE]
 const validate = (schema: Joi.ObjectSchema) => {
@@ -37,13 +38,16 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(getAllAnnual)
-  .post(validate(createAnnualSchema), createAnnual);
+  .get(asyncHandler(getAllAnnual))
+  .post(validate(createAnnualSchema), asyncHandler(createAnnual));
+
 router
   .route("/:id")
-  .get(getAnnualById)
-  .put(validate(updateAnnualSchema), updateAnnual)
-  .delete(deleteAnnual);
+  .get(asyncHandler(getAnnualById))
+  .put(validate(updateAnnualSchema), asyncHandler(updateAnnual))
+  .delete(asyncHandler(deleteAnnual));
+
+router.use(errorHandler);
 
 // [EXPORT]
 export default router;

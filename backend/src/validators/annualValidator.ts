@@ -15,7 +15,7 @@ export const createAnnualSchema = Joi.object({
   }),
 });
 
-// fFor updating annual conference
+// For updating annual conference
 export const updateAnnualSchema = Joi.object({
   name: Joi.string(),
   episcopalArea: Joi.string().valid("bea", "dea", "mea").min(1),

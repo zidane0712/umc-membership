@@ -1,5 +1,7 @@
 // [DEPENDENCIES]
 import { Request, Response } from "express";
+
+// [IMPORTS]
 import Annual from "../models/Annual";
 
 // [CONTROLLERS]
@@ -83,12 +85,10 @@ export const deleteAnnual = async (req: Request, res: Response) => {
         .json({ success: false, message: "Annual conference not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Annual conference deleted successfully",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Annual conference deleted successfully",
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
