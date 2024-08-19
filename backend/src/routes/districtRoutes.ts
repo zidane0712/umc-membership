@@ -1,45 +1,44 @@
-// [DEPENDECIES]
+// [DEPENDENCIES]
 import express, { Request, Response, NextFunction } from "express";
 
 // [IMPORTS]
 import {
-  createMembershipSchema,
-  updateMembershipSchema,
-} from "../validators/membershipValidator";
+  createDistrictSchema,
+  updateDistrictSchema,
+} from "../validators/districtValidator";
 import {
-  getAllMemberships,
-  createMembership,
-  getMemberById,
-  updateMember,
-  deleteMember,
-} from "../controllers/membershipController";
+  getAllDistrict,
+  createDistrict,
+  getDistrictById,
+  updateDistrict,
+  deleteDistrict,
+} from "../controllers/districtController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validateAnnualConference } from "../middleware/validateAnnualConference";
 import { validate } from "../middleware/validate";
 
-// [DECLARATION]
 const router = express.Router();
 
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllMemberships))
+  .get(asyncHandler(getAllDistrict))
   .post(
-    validate(createMembershipSchema),
+    validate(createDistrictSchema),
     validateAnnualConference,
-    asyncHandler(createMembership)
+    asyncHandler(createDistrict)
   );
 
 router
   .route("/:id")
-  .get(asyncHandler(getMemberById))
+  .get(asyncHandler(getDistrictById))
   .put(
-    validate(updateMembershipSchema),
+    validate(updateDistrictSchema),
     validateAnnualConference,
-    asyncHandler(updateMember)
+    asyncHandler(updateDistrict)
   )
-  .delete(asyncHandler(deleteMember));
+  .delete(asyncHandler(deleteDistrict));
 
 router.use(errorHandler);
 

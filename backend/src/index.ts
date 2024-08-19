@@ -10,6 +10,7 @@ dotenv.config();
 import { errorHandler } from "./middleware/errorHandler";
 import membershipRoutes from "./routes/membershipRoutes";
 import annualRoutes from "./routes/annualRoutes";
+import districtRoutes from "./routes/districtRoutes";
 
 // [APP CONFIGURATION]
 const app: Application = express();
@@ -32,6 +33,7 @@ mongoose
 // [ROUTES]
 app.use("/membership", membershipRoutes);
 app.use("/annual", annualRoutes);
+app.use("/district", districtRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

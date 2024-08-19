@@ -2,31 +2,30 @@
 import { NextFunction, Request, Response } from "express";
 
 // [IMPORTS]
-import Membership from "../models/Membership";
+import District from "../models/District";
 import Annual from "../models/Annual";
 
 // [CONTROLLERS]
-
-// Gets all membership
-export const getAllMemberships = async (req: Request, res: Response) => {
+// Gets all district
+export const getAllDistrict = async (req: Request, res: Response) => {
   try {
-    const memberships = await Membership.find();
-    res.json(memberships);
+    const districts = await District.find();
+    res.json(districts);
   } catch (err) {
     if (err instanceof Error) {
       res.status(500).json({ message: err.message });
     } else {
-      res.status(500).json({ message: "An unknown error occurred" });
+      res.status(500).json({ message: "An unknown erro occurred" });
     }
   }
 };
 
-// Create a new membership
-export const createMembership = async (req: Request, res: Response) => {
-  const membership = new Membership(req.body);
+// Create a new district
+export const createDistrict = async (req: Request, res: Response) => {
+  const district = new District(req.body);
   try {
-    const newMembership = await membership.save();
-    res.status(201).json(newMembership);
+    const newDistrict = await district.save();
+    res.status(201).json(newDistrict);
   } catch (err) {
     if (err instanceof Error) {
       res.status(400).json({ message: err.message });
@@ -36,26 +35,26 @@ export const createMembership = async (req: Request, res: Response) => {
   }
 };
 
-// Get a single membership by ID
-export const getMemberById = async (req: Request, res: Response) => {
+// Get a single district by ID
+export const getDistrictById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const member = await Membership.findById(id);
+    const district = await District.findById(id);
 
-    if (!member) {
+    if (!district) {
       return res
         .status(404)
-        .json({ success: false, message: "Member not found" });
+        .json({ success: false, message: "District not found" });
     }
 
-    res.status(200).json({ success: true, data: member });
+    res.status(200).json({ success: true, data: district });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
-// Update a member by ID
-export const updateMember = async (
+// Update district by ID
+export const updateDistrict = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -71,32 +70,30 @@ export const updateMember = async (
       if (!annualConference) {
         return res
           .status(400)
-          .json({ message: "Invalid Annual Conference reference." });
+          .json({ message: "Invalid Annual Conference reference" });
       }
     }
 
-    const updateMembership = await Membership.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
-    if (!updateMembership) {
+    const updateDistrict = await District.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+    if (!updateDistrict) {
       return res.status(404).json({ message: "Membership not found" });
     }
 
-    res.status(200).json(updateMembership);
+    res.status(200).json(updateDistrict);
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
-// Delete a member
-export const deleteMember = async (req: Request, res: Response) => {
+// Delete a district
+export const deleteDistrict = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const deletedMember = await Membership.findByIdAndDelete(id);
+    const deleteDistrict = await District.findByIdAndDelete(id);
 
-    if (!deletedMember) {
+    if (!deleteDistrict) {
       return res
         .status(404)
         .json({ success: false, message: "Member not found" });

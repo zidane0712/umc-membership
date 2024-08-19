@@ -8,19 +8,13 @@ export const validateAnnualConference = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { annualConference } = req.body;
-
-  try {
-    const annual = await Annual.findById(annualConference);
-    if (!annual) {
-      return res.status(400).json({
-        message: "Invalid annual conference ID. It does not exist",
-      });
+  if (req.body.annualConference) {
+    const annualConference = await Annual.findById(req.body.annualConference);
+    if (!annualConference) {
+      return res
+        .status(400)
+        .json({ message: "Invalid Annual Conference reference." });
     }
-    next();
-  } catch (error) {
-    res.status(500).json({
-      message: "Server erro while validating annual conference",
-    });
   }
+  next();
 };
