@@ -16,21 +16,7 @@ import {
 } from "../controllers/annualController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
-
-// [JOI MIDDLEWARE]
-const validate = (schema: Joi.ObjectSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        errors: error.details.map(
-          (err: Joi.ValidationErrorItem) => err.message
-        ),
-      });
-    }
-    next();
-  };
-};
+import { validate } from "../middleware/validate";
 
 // [DECLARATION]
 const router = express.Router();

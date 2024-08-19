@@ -71,9 +71,12 @@ export const createMembershipSchema = Joi.object({
     .optional(),
   ministries: Joi.array().items(Joi.string()).optional(),
   council: Joi.array().items(Joi.string()).optional(),
-  annualConference: Joi.array().items(Joi.string()).optional(),
-  district: Joi.array().items(Joi.string()).optional(),
-  localChurch: Joi.array().items(Joi.string()).optional(),
+  annualConference: Joi.string().required().messages({
+    "string.base": "Annual Conference must be a string",
+    "any.required": "Annual Conference is required",
+  }),
+  district: Joi.string().optional(),
+  localChurch: Joi.string().optional(),
 });
 
 // For updating a membership
@@ -115,7 +118,7 @@ export const updateMembershipSchema = Joi.object({
     .optional(),
   ministries: Joi.array().items(Joi.string()).optional(),
   council: Joi.array().items(Joi.string()).optional(),
-  annualConference: Joi.array().items(Joi.string()).optional(),
-  district: Joi.array().items(Joi.string()).optional(),
-  localChurch: Joi.array().items(Joi.string()).optional(),
+  annualConference: Joi.string().optional(),
+  district: Joi.string().optional(),
+  localChurch: Joi.string().optional(),
 });

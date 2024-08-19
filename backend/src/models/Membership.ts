@@ -59,9 +59,9 @@ export interface IMembership extends Document {
   organization: "umm" | "umwscs" | "umyaf" | "umyf" | "umcf";
   ministries?: mongoose.Types.ObjectId[];
   council?: mongoose.Types.ObjectId[];
-  annualConference?: mongoose.Types.ObjectId[];
-  district?: mongoose.Types.ObjectId[];
-  localChurch?: mongoose.Types.ObjectId[];
+  annualConference?: mongoose.Types.ObjectId;
+  district?: mongoose.Types.ObjectId;
+  localChurch?: mongoose.Types.ObjectId;
 }
 
 // [SCHEMA]
@@ -163,9 +163,9 @@ const membershipSchema = new Schema<IMembership>({
   },
   ministries: [{ type: Schema.Types.ObjectId, ref: "Ministry" }],
   council: [{ type: Schema.Types.ObjectId, ref: "Council" }],
-  annualConference: [{ type: Schema.Types.ObjectId, ref: "Annual" }],
-  district: [{ type: Schema.Types.ObjectId, ref: "District" }],
-  localChurch: [{ type: Schema.Types.ObjectId, ref: "Local" }],
+  annualConference: { type: Schema.Types.ObjectId, ref: "Annual" },
+  district: { type: Schema.Types.ObjectId, ref: "District" },
+  localChurch: { type: Schema.Types.ObjectId, ref: "Local" },
 });
 
 // [PRE-SAVE MIDDLEWARE]

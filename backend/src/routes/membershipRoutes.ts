@@ -16,21 +16,10 @@ import {
 } from "../controllers/membershipController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
+import { validateAnnualConference } from "../middleware/validateAnnualConference";
+import { validate } from "../middleware/validate";
 
 // [JOI MIDDLEWARE]
-const validate = (schema: Joi.ObjectSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        errors: error.details.map(
-          (err: Joi.ValidationErrorItem) => err.message
-        ),
-      });
-    }
-    next();
-  };
-};
 
 // [DECLARATION]
 const router = express.Router();
@@ -39,12 +28,20 @@ const router = express.Router();
 router
   .route("/")
   .get(asyncHandler(getAllMemberships))
-  .post(validate(createMembershipSchema), asyncHandler(createMembership));
+  .post(
+    validate(createMembershipSchema),
+    validateAnnualConference,
+    asyncHandler(createMembership)
+  );
 
 router
   .route("/:id")
   .get(asyncHandler(getMemberById))
-  .put(validate(updateMembershipSchema), asyncHandler(updateMember))
+  .put(
+    validate(updateMembershipSchema),
+    validateAnnualConference,
+    asyncHandler(updateMember)
+  )
   .delete(asyncHandler(deleteMember));
 
 router.use(errorHandler);
