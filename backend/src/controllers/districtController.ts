@@ -10,7 +10,7 @@ import { handleError } from "../utils/handleError";
 // Gets all district
 export const getAllDistrict = async (req: Request, res: Response) => {
   try {
-    const districts = await District.find();
+    const districts = await District.find().populate("annualConference");
     res.status(200).json({ success: true, data: districts });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
@@ -32,7 +32,7 @@ export const createDistrict = async (req: Request, res: Response) => {
 export const getDistrictById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const district = await District.findById(id);
+    const district = await District.findById(id).populate("annualConference");
 
     if (!district) {
       return res

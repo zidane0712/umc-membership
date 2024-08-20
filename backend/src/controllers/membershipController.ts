@@ -11,7 +11,9 @@ import { handleError } from "../utils/handleError";
 // Gets all membership
 export const getAllMemberships = async (req: Request, res: Response) => {
   try {
-    const memberships = await Membership.find();
+    const memberships = await Membership.find()
+      .populate("annualConference")
+      .populate("district");
     res.status(200).json({ success: true, data: memberships });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
@@ -33,7 +35,9 @@ export const createMembership = async (req: Request, res: Response) => {
 export const getMemberById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const member = await Membership.findById(id);
+    const member = await Membership.findById(id)
+      .populate("annualConference")
+      .populate("district");
 
     if (!member) {
       return res
