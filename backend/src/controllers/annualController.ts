@@ -11,7 +11,7 @@ import { handleError } from "../utils/handleError";
 export const getAllAnnual = async (req: Request, res: Response) => {
   try {
     const annualConferences = await Annual.find();
-    res.json(annualConferences);
+    res.status(200).json({ success: true, data: annualConferences });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
   }

@@ -17,6 +17,7 @@ import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validateAnnualConference } from "../middleware/validateAnnualConference";
 import { validate } from "../middleware/validate";
+import { validateDistrictConference } from "../middleware/validateDistrictConference";
 
 // [DECLARATION]
 const router = express.Router();
@@ -28,6 +29,7 @@ router
   .post(
     validate(createMembershipSchema),
     validateAnnualConference,
+    validateDistrictConference,
     asyncHandler(createMembership)
   );
 
@@ -37,6 +39,7 @@ router
   .put(
     validate(updateMembershipSchema),
     validateAnnualConference,
+    validateDistrictConference,
     asyncHandler(updateMember)
   )
   .delete(asyncHandler(deleteMember));

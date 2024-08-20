@@ -12,7 +12,7 @@ import { handleError } from "../utils/handleError";
 export const getAllMemberships = async (req: Request, res: Response) => {
   try {
     const memberships = await Membership.find();
-    res.json(memberships);
+    res.status(200).json({ success: true, data: memberships });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
   }

@@ -55,7 +55,7 @@ export interface IMembership extends Document {
   ministries?: mongoose.Types.ObjectId[];
   council?: mongoose.Types.ObjectId[];
   annualConference: mongoose.Types.ObjectId;
-  district?: mongoose.Types.ObjectId;
+  district: mongoose.Types.ObjectId;
   localChurch?: mongoose.Types.ObjectId;
 }
 
@@ -158,8 +158,12 @@ const membershipSchema = new Schema<IMembership>({
   },
   ministries: [{ type: Schema.Types.ObjectId, ref: "Ministry" }],
   council: [{ type: Schema.Types.ObjectId, ref: "Council" }],
-  annualConference: { type: Schema.Types.ObjectId, ref: "Annual" },
-  district: { type: Schema.Types.ObjectId, ref: "District" },
+  annualConference: {
+    type: Schema.Types.ObjectId,
+    ref: "Annual",
+    required: true,
+  },
+  district: { type: Schema.Types.ObjectId, ref: "District", required: true },
   localChurch: { type: Schema.Types.ObjectId, ref: "Local" },
 });
 

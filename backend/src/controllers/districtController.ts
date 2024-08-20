@@ -11,7 +11,7 @@ import { handleError } from "../utils/handleError";
 export const getAllDistrict = async (req: Request, res: Response) => {
   try {
     const districts = await District.find();
-    res.json(districts);
+    res.status(200).json({ success: true, data: districts });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
   }
