@@ -4,6 +4,7 @@ import { NextFunction, Request, Response } from "express";
 // [IMPORTS]
 import District from "../models/District";
 import Annual from "../models/Annual";
+import { handleError } from "../utils/handleError";
 
 // [CONTROLLERS]
 // Gets all district
@@ -12,11 +13,7 @@ export const getAllDistrict = async (req: Request, res: Response) => {
     const districts = await District.find();
     res.json(districts);
   } catch (err) {
-    if (err instanceof Error) {
-      res.status(500).json({ message: err.message });
-    } else {
-      res.status(500).json({ message: "An unknown erro occurred" });
-    }
+    handleError(res, err, "An unknown error occured");
   }
 };
 
@@ -27,11 +24,7 @@ export const createDistrict = async (req: Request, res: Response) => {
     const newDistrict = await district.save();
     res.status(201).json(newDistrict);
   } catch (err) {
-    if (err instanceof Error) {
-      res.status(400).json({ message: err.message });
-    } else {
-      res.status(400).json({ message: "An unknown error occurred" });
-    }
+    handleError(res, err, "An unknown error occured");
   }
 };
 
@@ -96,12 +89,12 @@ export const deleteDistrict = async (req: Request, res: Response) => {
     if (!deleteDistrict) {
       return res
         .status(404)
-        .json({ success: false, message: "Member not found" });
+        .json({ success: false, message: "District not found" });
     }
 
     res
       .status(200)
-      .json({ success: true, message: "Member deleted successfully" });
+      .json({ success: true, message: "District deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }

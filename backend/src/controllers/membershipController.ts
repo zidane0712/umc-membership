@@ -4,6 +4,7 @@ import { NextFunction, Request, Response } from "express";
 // [IMPORTS]
 import Membership from "../models/Membership";
 import Annual from "../models/Annual";
+import { handleError } from "../utils/handleError";
 
 // [CONTROLLERS]
 
@@ -13,11 +14,7 @@ export const getAllMemberships = async (req: Request, res: Response) => {
     const memberships = await Membership.find();
     res.json(memberships);
   } catch (err) {
-    if (err instanceof Error) {
-      res.status(500).json({ message: err.message });
-    } else {
-      res.status(500).json({ message: "An unknown error occurred" });
-    }
+    handleError(res, err, "An unknown error occured");
   }
 };
 
@@ -28,11 +25,7 @@ export const createMembership = async (req: Request, res: Response) => {
     const newMembership = await membership.save();
     res.status(201).json(newMembership);
   } catch (err) {
-    if (err instanceof Error) {
-      res.status(400).json({ message: err.message });
-    } else {
-      res.status(400).json({ message: "An unknown error occurred" });
-    }
+    handleError(res, err, "An unknown error occured");
   }
 };
 

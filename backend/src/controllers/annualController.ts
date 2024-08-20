@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 
 // [IMPORTS]
 import Annual from "../models/Annual";
+import { handleError } from "../utils/handleError";
 
 // [CONTROLLERS]
 
@@ -12,11 +13,7 @@ export const getAllAnnual = async (req: Request, res: Response) => {
     const annualConferences = await Annual.find();
     res.json(annualConferences);
   } catch (err) {
-    if (err instanceof Error) {
-      res.status(500).json({ message: err.message });
-    } else {
-      res.status(500).json({ message: "An unknown error occures" });
-    }
+    handleError(res, err, "An unknown error occured");
   }
 };
 
@@ -27,11 +24,7 @@ export const createAnnual = async (req: Request, res: Response) => {
     const newAnnual = await annualConference.save();
     res.status(201).json(newAnnual);
   } catch (err) {
-    if (err instanceof Error) {
-      res.status(400).json({ message: err.message });
-    } else {
-      res.status(400).json({ message: "An unknown error occured" });
-    }
+    handleError(res, err, "An unknown error occured");
   }
 };
 
