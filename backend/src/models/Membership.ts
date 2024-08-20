@@ -56,7 +56,7 @@ export interface IMembership extends Document {
   council?: mongoose.Types.ObjectId[];
   annualConference: mongoose.Types.ObjectId;
   district: mongoose.Types.ObjectId;
-  localChurch?: mongoose.Types.ObjectId;
+  localChurch: mongoose.Types.ObjectId;
 }
 
 // [SCHEMA]
@@ -164,7 +164,7 @@ const membershipSchema = new Schema<IMembership>({
     required: true,
   },
   district: { type: Schema.Types.ObjectId, ref: "District", required: true },
-  localChurch: { type: Schema.Types.ObjectId, ref: "Local" },
+  localChurch: { type: Schema.Types.ObjectId, ref: "Local", required: true },
 });
 
 // [PRE-SAVE MIDDLEWARE]

@@ -16,8 +16,9 @@ import {
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validateAnnualConference } from "../middleware/validateAnnualConference";
-import { validate } from "../middleware/validate";
 import { validateDistrictConference } from "../middleware/validateDistrictConference";
+import { validateLocalChurch } from "../middleware/validateLocalChurch";
+import { validate } from "../middleware/validate";
 
 // [DECLARATION]
 const router = express.Router();
@@ -30,6 +31,7 @@ router
     validate(createMembershipSchema),
     validateAnnualConference,
     validateDistrictConference,
+    validateLocalChurch,
     asyncHandler(createMembership)
   );
 
@@ -40,6 +42,7 @@ router
     validate(updateMembershipSchema),
     validateAnnualConference,
     validateDistrictConference,
+    validateLocalChurch,
     asyncHandler(updateMember)
   )
   .delete(asyncHandler(deleteMember));

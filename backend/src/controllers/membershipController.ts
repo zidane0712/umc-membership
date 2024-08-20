@@ -5,6 +5,8 @@ import { NextFunction, Request, Response } from "express";
 import Membership from "../models/Membership";
 import Annual from "../models/Annual";
 import { handleError } from "../utils/handleError";
+import District from "../models/District";
+import Local from "../models/Local";
 
 // [CONTROLLERS]
 
@@ -13,7 +15,8 @@ export const getAllMemberships = async (req: Request, res: Response) => {
   try {
     const memberships = await Membership.find()
       .populate("annualConference")
-      .populate("district");
+      .populate("district")
+      .populate("localChurch");
     res.status(200).json({ success: true, data: memberships });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
@@ -37,7 +40,8 @@ export const getMemberById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const member = await Membership.findById(id)
       .populate("annualConference")
-      .populate("district");
+      .populate("district")
+      .populate("localChurch");
 
     if (!member) {
       return res
@@ -69,6 +73,24 @@ export const updateMember = async (
         return res
           .status(400)
           .json({ message: "Invalid Annual Conference reference." });
+      }
+    }
+
+    if (updateData.district) {
+      const district = await District.findById(updateData.district);
+      if (!district) {
+        return res
+          .status(400)
+          .json({ message: "Invalid District Conference reference." });
+      }
+    }
+
+    if (updateData.local) {
+      const localChurch = await Local.findById(updateData.localChurch);
+      if (!localChurch) {
+        return res
+          .status(400)
+          .json({ message: "Invalid Local Church reference." });
       }
     }
 

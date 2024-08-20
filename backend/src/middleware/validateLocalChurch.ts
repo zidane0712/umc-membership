@@ -8,8 +8,8 @@ export const validateLocalChurch = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (req.body.local) {
-    const localChurch = await Local.findById(req.body.local);
+  if (req.body.localChurch) {
+    const localChurch = await Local.findById(req.body.localChurch);
 
     if (!localChurch) {
       return res
