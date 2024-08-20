@@ -11,6 +11,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import membershipRoutes from "./routes/membershipRoutes";
 import annualRoutes from "./routes/annualRoutes";
 import districtRoutes from "./routes/districtRoutes";
+import localChurchRoutes from "./routes/localChurchRoutes";
 
 // [APP CONFIGURATION]
 const app: Application = express();
@@ -34,6 +35,7 @@ mongoose
 app.use("/membership", membershipRoutes);
 app.use("/annual", annualRoutes);
 app.use("/district", districtRoutes);
+app.use("/localChurch", localChurchRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

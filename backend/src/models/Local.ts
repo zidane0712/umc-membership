@@ -13,8 +13,9 @@ export interface IAddress {
 }
 
 export interface ILocal extends Document {
-  local: string;
+  name: string;
   address: IAddress;
+  district: mongoose.Types.ObjectId;
 }
 
 // [SCHEMA]
@@ -32,8 +33,9 @@ const addressSchema = new Schema<IAddress>(
 );
 
 const localSchema = new Schema<ILocal>({
-  local: { type: String, required: true },
+  name: { type: String, required: true },
   address: { type: addressSchema, required: true },
+  district: { type: Schema.Types.ObjectId, ref: "District" },
 });
 
 // [MODEL]
