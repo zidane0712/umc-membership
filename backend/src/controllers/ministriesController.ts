@@ -146,7 +146,7 @@ export const addMemberToMinistry = async (req: Request, res: Response) => {
 
     // Add the ministry to the members if not already added
     const updates = members.map(async (member) => {
-      member.ministries = member.ministries || []; // Initialize if undefined
+      member.ministries = member.ministries || [];
       if (
         !member.ministries.some((ministryId) =>
           ministryId.equals(ministry._id as mongoose.Types.ObjectId)
