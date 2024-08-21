@@ -156,15 +156,36 @@ const membershipSchema = new Schema<IMembership>({
     type: String,
     enum: ["umm", "umwscs", "umyaf", "umyf", "umcf"],
   },
-  ministries: [{ type: Schema.Types.ObjectId, ref: "Ministry" }],
-  council: [{ type: Schema.Types.ObjectId, ref: "Council" }],
+  ministries: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Ministry",
+    },
+  ],
+  council: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Council",
+    },
+  ],
   annualConference: {
     type: Schema.Types.ObjectId,
     ref: "Annual",
     required: true,
+    index: true,
   },
-  district: { type: Schema.Types.ObjectId, ref: "District", required: true },
-  localChurch: { type: Schema.Types.ObjectId, ref: "Local", required: true },
+  district: {
+    type: Schema.Types.ObjectId,
+    ref: "District",
+    required: true,
+    index: true,
+  },
+  localChurch: {
+    type: Schema.Types.ObjectId,
+    ref: "Local",
+    required: true,
+    index: true,
+  },
 });
 
 // [PRE-SAVE MIDDLEWARE]

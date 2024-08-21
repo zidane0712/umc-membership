@@ -79,7 +79,10 @@ export const createMembershipSchema = Joi.object({
     "string.base": "District Conference must be a string",
     "any.required": "District Conference is required",
   }),
-  localChurch: Joi.string().optional(),
+  localChurch: Joi.string().required().messages({
+    "string.base": "Local church must be a string",
+    "any.required": "Local church is required",
+  }),
 });
 
 // For updating a membership
