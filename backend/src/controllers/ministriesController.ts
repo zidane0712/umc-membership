@@ -102,54 +102,71 @@ export const deleteMinistry = async (req: Request, res: Response) => {
   }
 };
 
-// Add a member in a ministry
+// Add multiple members to a ministry
 export const addMemberToMinistry = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { memberId } = req.body;
+    const { memberIds }: { memberIds: mongoose.Types.ObjectId[] } = req.body;
 
     // Find the ministry by Id
     const ministry = await Ministry.findById(id);
-
     if (!ministry) {
-      console.log(id);
       return res.status(404).json({ message: "Ministry not found" });
     }
 
-    // Find the member by Id
-    const member = await Membership.findById(memberId);
-    if (!member) {
-      return res.status(404).json({ message: "Member not found" });
-    }
-
-    // Initialize arrays
+    // Initialize members array if undefined
     ministry.members = ministry.members || [];
-    member.ministries = member.ministries || [];
 
-    // Ensure member belongs to the same local church as the ministry
-    if (!member.localChurch.equals(ministry.localChurch)) {
-      return res.status(400).json({
-        message: "Member and Ministry must belong to the same local church",
-      });
+    // Find the members by Ids
+    const members = await Membership.find({ _id: { $in: memberIds } });
+    const memberIdsSet = new Set(memberIds);
+
+    if (members.length !== memberIds.length) {
+      return res.status(404).json({ message: "One or more members not found" });
     }
 
-    // Add the member to the ministry if not yet added
-    if (!ministry.members.includes(member._id as mongoose.Types.ObjectId)) {
-      ministry.members.push(member._id as mongoose.Types.ObjectId);
+    // Ensure members belong to the same local church as the ministry
+    for (const member of members) {
+      if (!member.localChurch.equals(ministry.localChurch)) {
+        return res.status(400).json({
+          message:
+            "All members and the Ministry must belong to the same local church",
+        });
+      }
+    }
+
+    // Add members to the ministry if not already added
+    const newMemberIds = memberIds.filter(
+      (memberId) => !ministry.members!.includes(memberId)
+    );
+    if (newMemberIds.length > 0) {
+      ministry.members.push(...newMemberIds);
       await ministry.save();
     }
 
-    // Add the ministry to the member if not yet added
-    if (!member.ministries?.includes(ministry._id as mongoose.Types.ObjectId)) {
-      member.ministries.push(ministry._id as mongoose.Types.ObjectId);
-      await member.save();
-    }
+    // Add the ministry to the members if not already added
+    const updates = members.map(async (member) => {
+      member.ministries = member.ministries || []; // Initialize if undefined
+      if (
+        !member.ministries.some((ministryId) =>
+          ministryId.equals(ministry._id as mongoose.Types.ObjectId)
+        )
+      ) {
+        member.ministries.push(ministry._id as mongoose.Types.ObjectId);
+        await member.save();
+      }
+    });
+    await Promise.all(updates);
 
     res.status(200).json({
       success: true,
-      message: "Member successfully added to Ministry",
+      message: "Members successfully added to Ministry",
     });
   } catch (err) {
-    handleError(res, err, "An error occurred while adding member to ministry");
+    handleError(
+      res,
+      err,
+      "An error occurred while adding members to the ministry"
+    );
   }
 };
