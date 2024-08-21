@@ -16,10 +16,10 @@ import mongoose from "mongoose";
 export const getAllMemberships = async (req: Request, res: Response) => {
   try {
     const memberships = await Membership.find()
-      .populate("annualConference")
-      .populate("district")
-      .populate("localChurch")
-      .populate("ministries");
+      .populate("annualConference", "name")
+      .populate("district", "name")
+      .populate("localChurch", "name")
+      .populate("ministries", "name");
     res.status(200).json({ success: true, data: memberships });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
@@ -42,10 +42,10 @@ export const getMemberById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const member = await Membership.findById(id)
-      .populate("annualConference")
-      .populate("district")
-      .populate("localChurch")
-      .populate("ministries");
+      .populate("annualConference", "name")
+      .populate("district", "name")
+      .populate("localChurch", "name")
+      .populate("ministries", "name");
 
     if (!member) {
       return res

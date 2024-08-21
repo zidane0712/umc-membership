@@ -14,8 +14,8 @@ import { handleError } from "../utils/handleError";
 export const getAllMinistry = async (req: Request, res: Response) => {
   try {
     const ministries = await Ministry.find()
-      .populate("localChurch")
-      .populate("members");
+      .populate("localChurch", "name")
+      .populate("members", "name");
     res.status(200).json({ success: true, data: ministries });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
@@ -38,8 +38,8 @@ export const getMinistryById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const ministry = await Ministry.findById(id)
-      .populate("localChurch")
-      .populate("members");
+      .populate("localChurch", "name")
+      .populate("members", "name");
 
     if (!ministry) {
       return res

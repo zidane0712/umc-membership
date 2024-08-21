@@ -11,7 +11,7 @@ import { handleError } from "../utils/handleError";
 // Get all local church
 export const getAllLocalChurch = async (req: Request, res: Response) => {
   try {
-    const localChurch = await Local.find().populate("district");
+    const localChurch = await Local.find().populate("district", "name");
     res.status(200).json({ success: true, data: localChurch });
   } catch (err) {
     handleError(res, err, "An unknown error occured");
@@ -34,7 +34,7 @@ export const createLocalChurch = async (req: Request, res: Response) => {
 export const getLocalChurchById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const localChurch = await Local.findById(id).populate("district");
+    const localChurch = await Local.findById(id).populate("district", "name");
 
     if (!localChurch) {
       return res
