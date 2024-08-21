@@ -12,6 +12,7 @@ import {
   getMinistryById,
   updateMinistry,
   deleteMinistry,
+  addMemberToMinistry,
 } from "../controllers/ministriesController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
@@ -39,6 +40,8 @@ router
     asyncHandler(updateMinistry)
   )
   .delete(asyncHandler(deleteMinistry));
+
+router.route("/:id/add-member").post(asyncHandler(addMemberToMinistry));
 
 router.use(errorHandler);
 
