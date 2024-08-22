@@ -13,6 +13,23 @@ const districtSchema = new Schema<IDistrict>({
   annualConference: { type: Schema.Types.ObjectId, ref: "Annual" },
 });
 
+// [MIDDLEWARE]
+districtSchema.pre("save", async function (next) {
+  const existingDistrictConference = await District.findOne({
+    name: this.name,
+    annualConference: this.annualConference,
+  });
+
+  if (existingDistrictConference) {
+    const error = new Error(
+      "A district conference with this name and annual conference already exists."
+    );
+    next(error);
+  } else {
+    next();
+  }
+});
+
 // [MODEL]
 const District = mongoose.model<IDistrict>("District", districtSchema);
 

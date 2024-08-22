@@ -19,10 +19,26 @@ export const getAllAnnual = async (req: Request, res: Response) => {
 
 // Add a new annual conference
 export const createAnnual = async (req: Request, res: Response) => {
-  const annualConference = new Annual(req.body);
+  const { name, episcopalArea } = req.body;
+
   try {
-    const newAnnual = await annualConference.save();
-    res.status(201).json(newAnnual);
+    // Manually check if the annual conference already exists
+    const existingAnnualConference = await Annual.findOne({
+      name,
+      episcopalArea,
+    });
+
+    if (existingAnnualConference) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "An annual conference with this name and episcopal area already exists",
+      });
+    }
+
+    const annualConference = new Annual(req.body);
+    const newAnnualConference = await annualConference.save();
+    res.status(201).json(newAnnualConference);
   } catch (err) {
     handleError(res, err, "An unknown error occured");
   }
@@ -50,17 +66,34 @@ export const getAnnualById = async (req: Request, res: Response) => {
 export const updateAnnual = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updatedAnnual = await Annual.findByIdAndUpdate(id, req.body, {
+    const { name, episcopalArea } = req.body;
+
+    // Check if there's another annual conference with the same name and episcopal area
+    const existingAnnualConference = await Annual.findOne({
+      name,
+      episcopalArea,
+      _id: { $ne: id },
+    });
+
+    if (existingAnnualConference) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "An annual conference with this name and episcopal area already exists.",
+      });
+    }
+
+    const updateAnnual = await Annual.findByIdAndUpdate(id, req.body, {
       new: true,
     });
 
-    if (!updatedAnnual) {
+    if (!updateAnnual) {
       return res
         .status(404)
         .json({ success: false, message: "Annual Conference not found" });
     }
 
-    res.status(200).json({ success: true, data: updatedAnnual });
+    res.status(200).json({ success: true, data: updateAnnual });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }

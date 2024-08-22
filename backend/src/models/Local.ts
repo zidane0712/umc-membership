@@ -61,6 +61,24 @@ const localSchema = new Schema<ILocal>({
   anniversaryDate: { type: Date, required: true },
 });
 
+// [MIDDLEWARE]
+localSchema.pre("save", async function (next) {
+  const existingLocalChurch = await Local.findOne({
+    name: this.name,
+    district: this.district,
+    annualConference: this.annualConference,
+  });
+
+  if (existingLocalChurch) {
+    const error = new Error(
+      "A local church with this name, district, and annual conference already exists."
+    );
+    next(error);
+  } else {
+    next();
+  }
+});
+
 // [MODEL]
 const Local = mongoose.model<ILocal>("Local", localSchema);
 

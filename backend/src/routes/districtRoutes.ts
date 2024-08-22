@@ -1,6 +1,6 @@
 // [DEPENDENCIES]
 import express, { Request, Response, NextFunction } from "express";
-
+ 
 // [IMPORTS]
 import {
   createDistrictSchema,

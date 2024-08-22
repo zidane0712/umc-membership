@@ -11,18 +11,37 @@ import { handleError } from "../utils/handleError";
 // Get all local church
 export const getAllLocalChurch = async (req: Request, res: Response) => {
   try {
-    const localChurch = await Local.find().populate("district", "name");
+    const localChurch = await Local.find()
+      .populate("district", "name")
+      .populate("annualConference", "name");
     res.status(200).json({ success: true, data: localChurch });
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(res, err, "An unknown error occurred");
   }
 };
 
 // Create a new local church
 export const createLocalChurch = async (req: Request, res: Response) => {
-  const localChurch = new Local(req.body);
+  const { name, district, annualConference } = req.body;
 
   try {
+    // Manually check if the local church already exists
+    const existingLocalChurch = await Local.findOne({
+      name,
+      district,
+      annualConference,
+    });
+
+    if (existingLocalChurch) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A local church with this name, district, and annual conference already exists.",
+      });
+    }
+
+    // If it doesn't exist, create a new one
+    const localChurch = new Local(req.body);
     const newLocalChurch = await localChurch.save();
     res.status(201).json(newLocalChurch);
   } catch (err) {
@@ -34,7 +53,9 @@ export const createLocalChurch = async (req: Request, res: Response) => {
 export const getLocalChurchById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const localChurch = await Local.findById(id).populate("district", "name");
+    const localChurch = await Local.findById(id)
+      .populate("district", "name")
+      .populate("annualConference", "name");
 
     if (!localChurch) {
       return res
@@ -49,24 +70,46 @@ export const getLocalChurchById = async (req: Request, res: Response) => {
 };
 
 // Update local church by ID
-export const updateLocalChurch = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const updateLocalChurch = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { name, district, annualConference } = req.body;
 
-    if (updateData.district) {
-      const district = await District.findById(updateData.district);
+    // Check if there's another local church with same name, district, and annual conference
+    const existingLocalChurch = await Local.findOne({
+      name,
+      district,
+      annualConference,
+      _id: { $ne: id },
+    });
 
-      if (!district) {
-        return res.status(400).json({ message: "Invalid Local Church " });
+    if (existingLocalChurch) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A local church with this name, district, and annual conference already exists.",
+      });
+    }
+
+    if (district) {
+      const districtCheck = await District.findById(district);
+
+      if (!districtCheck) {
+        return res
+          .status(400)
+          .json({ message: "Invalid District Conference " });
       }
     }
 
-    const updateLocal = await Local.findByIdAndUpdate(id, updateData, {
+    if (annualConference) {
+      const annualCheck = await Annual.findById(annualConference);
+
+      if (!annualCheck) {
+        return res.status(400).json({ message: "Invalid Annual Conference " });
+      }
+    }
+
+    const updateLocal = await Local.findByIdAndUpdate(id, req.body, {
       new: true,
     });
 

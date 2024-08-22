@@ -55,7 +55,10 @@ export const createLocalChurchSchema = Joi.object({
 
 // For updating local church
 export const updateLocalChurchSchema = Joi.object({
-  name: Joi.string(),
+  name: Joi.string().optional(),
   address: addressSchema.optional(),
-  district: Joi.string(),
+  district: Joi.string().optional(),
+  annualConference: Joi.string().optional(),
+  contactNo: Joi.string().optional(),
+  anniversaryDate: Joi.date().optional(),
 });

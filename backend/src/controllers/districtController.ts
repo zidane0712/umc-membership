@@ -19,9 +19,26 @@ export const getAllDistrict = async (req: Request, res: Response) => {
 
 // Create a new district
 export const createDistrict = async (req: Request, res: Response) => {
-  const district = new District(req.body);
+  const { name, annualConference } = req.body;
+
   try {
-    const newDistrict = await district.save();
+    // Manually check if district conference already exists
+    const existingDistrictConference = await District.findOne({
+      name,
+      annualConference,
+    });
+
+    if (existingDistrictConference) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A district conference with this name and annual conference already exists.",
+      });
+    }
+
+    // If it doesn't exist, create a new one
+    const districtConference = new District(req.body);
+    const newDistrict = await districtConference.save();
     res.status(201).json(newDistrict);
   } catch (err) {
     handleError(res, err, "An unknown error occured");
@@ -54,20 +71,33 @@ export const updateDistrict = async (
 ) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { name, annualConference } = req.body;
 
-    if (updateData.annualConference) {
-      const annualConference = await Annual.findById(
-        updateData.annualConference
-      );
-      if (!annualConference) {
+    // Check if there's another district conference with same name and annual conference
+    const existingDistrictConference = await District.findOne({
+      name,
+      annualConference,
+      _id: { $ne: id },
+    });
+
+    if (existingDistrictConference) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A district conference with this name and annual conference already exists.",
+      });
+    }
+
+    if (annualConference) {
+      const annualConferenceCheck = await Annual.findById(annualConference);
+      if (!annualConferenceCheck) {
         return res
           .status(400)
           .json({ message: "Invalid Annual Conference reference" });
       }
     }
 
-    const updateDistrict = await District.findByIdAndUpdate(id, updateData, {
+    const updateDistrict = await District.findByIdAndUpdate(id, req.body, {
       new: true,
     });
     if (!updateDistrict) {

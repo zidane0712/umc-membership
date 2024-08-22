@@ -13,6 +13,23 @@ const annualSchema = new Schema<IAnnual>({
   episcopalArea: { type: String, enum: ["bea", "dea", "mea"], required: true },
 });
 
+// [MIDDLEWARE]
+annualSchema.pre("save", async function (next) {
+  const existingAnnualConference = await Annual.findOne({
+    name: this.name,
+    episcopalArea: this.episcopalArea,
+  });
+
+  if (existingAnnualConference) {
+    const error = new Error(
+      "An annual conference with this this name and episcopal area already exists."
+    );
+    next(error);
+  } else {
+    next();
+  }
+});
+
 // [MODEL]
 const Annual = mongoose.model<IAnnual>("Annual", annualSchema);
 
