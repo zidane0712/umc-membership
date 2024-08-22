@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 // [DEFINITION]
 export interface IAddress {
-  number: string;
+  number?: string;
   street?: string;
   subdivision?: string;
   barangay: string;
@@ -53,7 +53,6 @@ export interface IMembership extends Document {
   isActive: boolean;
   organization: "umm" | "umwscs" | "umyaf" | "umyf" | "umcf";
   ministries?: mongoose.Types.ObjectId[];
-  council?: mongoose.Types.ObjectId[];
   annualConference: mongoose.Types.ObjectId;
   district: mongoose.Types.ObjectId;
   localChurch: mongoose.Types.ObjectId;
@@ -62,7 +61,7 @@ export interface IMembership extends Document {
 // [SCHEMA]
 const addressSchema = new Schema<IAddress>(
   {
-    number: { type: String, required: true },
+    number: { type: String },
     street: { type: String },
     subdivision: { type: String },
     barangay: { type: String, required: true },
@@ -160,12 +159,6 @@ const membershipSchema = new Schema<IMembership>({
     {
       type: Schema.Types.ObjectId,
       ref: "Ministry",
-    },
-  ],
-  council: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "Council",
     },
   ],
   annualConference: {

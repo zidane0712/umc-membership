@@ -17,6 +17,7 @@ import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validate } from "../middleware/validate";
 import { validateDistrictConference } from "../middleware/validateDistrictConference";
+import { validateAnnualConference } from "../middleware/validateAnnualConference";
 
 const router = express.Router();
 
@@ -27,6 +28,7 @@ router
   .post(
     validate(createLocalChurchSchema),
     validateDistrictConference,
+    validateAnnualConference,
     asyncHandler(createLocalChurch)
   );
 
@@ -36,6 +38,7 @@ router
   .put(
     validate(updateLocalChurchSchema),
     validateDistrictConference,
+    validateAnnualConference,
     asyncHandler(updateLocalChurch)
   )
   .delete(asyncHandler(deleteLocalChurch));
