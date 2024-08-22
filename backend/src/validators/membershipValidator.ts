@@ -4,13 +4,25 @@ import Joi from "joi";
 // [JOI SCHEMA]
 // Address validation
 const addressSchema = Joi.object({
-  number: Joi.string().required(),
+  number: Joi.string().optional(),
   street: Joi.string().optional(),
   subdivision: Joi.string().optional(),
-  barangay: Joi.string().required(),
-  municipality: Joi.string().required(),
-  province: Joi.string().required(),
-  postalCode: Joi.number().required(),
+  barangay: Joi.string().required().messages({
+    "string.base": "Barangay must be a string",
+    "any.required": "Barangay is required",
+  }),
+  municipality: Joi.string().required().messages({
+    "string.base": "Municipality/ City must be a string",
+    "any.required": "Municipality/ City is required",
+  }),
+  province: Joi.string().required().messages({
+    "string.base": "Province/ City must be a string",
+    "any.required": "Province/ City is required",
+  }),
+  postalCode: Joi.number().required().messages({
+    "string.base": "Postal code must be a number",
+    "any.required": "Postal code is required",
+  }),
 });
 
 // Baptism/Confirmation validation
@@ -35,20 +47,36 @@ const familySchema = Joi.object({
 // For adding membership
 export const createMembershipSchema = Joi.object({
   name: Joi.object({
-    firstname: Joi.string().required(),
+    firstname: Joi.string().required().messages({
+      "string.base": "First name must be a string",
+      "any.required": "First name is required",
+    }),
     middlename: Joi.string().optional(),
-    lastname: Joi.string().required(),
+    lastname: Joi.string().required().messages({
+      "string.base": "Last name must be a string",
+      "any.required": "Last name is required",
+    }),
     suffix: Joi.string().optional(),
   }).required(),
   address: Joi.object({
     permanent: addressSchema.required(),
     current: addressSchema.required(),
   }).required(),
-  gender: Joi.string().valid("male", "female").required(),
+  gender: Joi.string().valid("male", "female").required().messages({
+    "string.base": "Gender must be a string",
+    "any.required": "Gender is required",
+  }),
   civilStatus: Joi.string()
     .valid("single", "married", "separated", "widowed")
-    .required(),
-  birthday: Joi.date().required(),
+    .required()
+    .messages({
+      "string.base": "Civil status must be a string",
+      "any.required": "Civil status is required",
+    }),
+  birthday: Joi.date().required().messages({
+    "string.base": "Birthday must be a date",
+    "any.required": "Birthday is required",
+  }),
   contactNo: Joi.string()
     .pattern(/^09\d{9}$/)
     .required()
@@ -64,7 +92,11 @@ export const createMembershipSchema = Joi.object({
   children: Joi.array().items(familySchema).optional(),
   membershipClassification: Joi.string()
     .valid("baptized", "professing", "affiliate", "associate", "constituent")
-    .required(),
+    .required()
+    .messages({
+      "string.base": "Membership classification must be a string",
+      "any.required": "Membership classification is required",
+    }),
   isActive: Joi.boolean().default(false),
   organization: Joi.string()
     .valid("umm", "umwscs", "umyaf", "umyf", "umcf")

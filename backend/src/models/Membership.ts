@@ -101,7 +101,11 @@ const membershipSchema = new Schema<IMembership>({
     permanent: { type: addressSchema, required: true },
     current: { type: addressSchema, required: true },
   },
-  gender: { type: String, enum: ["male", "female"], required: true },
+  gender: {
+    type: String,
+    enum: ["male", "female"],
+    required: true,
+  },
   civilStatus: {
     type: String,
     enum: ["single", "married", "separated", "widowed"],
@@ -182,7 +186,7 @@ const membershipSchema = new Schema<IMembership>({
 });
 
 // [PRE-SAVE MIDDLEWARE]
-membershipSchema.pre("save", function (next) {
+membershipSchema.pre("save", async function (next) {
   // Age
   const today = new Date();
   const birthDate = new Date(this.birthday);
@@ -207,6 +211,19 @@ membershipSchema.pre("save", function (next) {
     this.organization = "umyf";
   } else if (this.age <= 12) {
     this.organization = "umcf";
+  }
+
+  // Duplicate Check
+  const existingMembership = await Membership.findOne({
+    name: this.name,
+    district: this.district,
+    annualConference: this.annualConference,
+  });
+
+  if (existingMembership) {
+    const error = new Error(
+      "A membership with this name, district, and annual conference already exists."
+    );
   }
 
   next();

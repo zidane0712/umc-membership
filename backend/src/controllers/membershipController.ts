@@ -28,8 +28,26 @@ export const getAllMemberships = async (req: Request, res: Response) => {
 
 // Create a new membership
 export const createMembership = async (req: Request, res: Response) => {
-  const membership = new Membership(req.body);
+  const { name, district, localChurch } = req.body;
+
   try {
+    // Check if a membership already exists with the same name, district, and local church
+    const existingMembership = await Membership.findOne({
+      name,
+      district,
+      localChurch,
+    });
+
+    if (existingMembership) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A membership with this name, district, and local church already exists.",
+      });
+    }
+
+    // If it doesn't exist, create a new membership
+    const membership = new Membership(req.body);
     const newMembership = await membership.save();
     res.status(201).json(newMembership);
   } catch (err) {
@@ -67,42 +85,55 @@ export const updateMember = async (
 ) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { name, localChurch, district, annualConference } = req.body;
 
-    if (updateData.annualConference) {
-      const annualConference = await Annual.findById(
-        updateData.annualConference
-      );
-      if (!annualConference) {
+    // Check if there's another membership with same name, district, and annual conference
+    const existingMembership = await Membership.findOne({
+      name,
+      localChurch,
+      district,
+      annualConference,
+      _id: { $ne: id },
+    });
+
+    if (existingMembership) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A membership with this name, localChurch, district, and annual conference already exists.",
+      });
+    }
+
+    if (annualConference) {
+      const annualConferenceCheck = await Annual.findById(annualConference);
+      if (!annualConferenceCheck) {
         return res
           .status(400)
           .json({ message: "Invalid Annual Conference reference." });
       }
     }
 
-    if (updateData.district) {
-      const district = await District.findById(updateData.district);
-      if (!district) {
+    if (district) {
+      const districtCheck = await District.findById(district);
+      if (!districtCheck) {
         return res
           .status(400)
           .json({ message: "Invalid District Conference reference." });
       }
     }
 
-    if (updateData.local) {
-      const localChurch = await Local.findById(updateData.localChurch);
-      if (!localChurch) {
+    if (localChurch) {
+      const localChurchCheck = await Local.findById(localChurch);
+      if (!localChurchCheck) {
         return res
           .status(400)
           .json({ message: "Invalid Local Church reference." });
       }
     }
 
-    const updateMembership = await Membership.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
+    const updateMembership = await Membership.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
     if (!updateMembership) {
       return res.status(404).json({ message: "Membership not found" });
     }
