@@ -13,6 +13,7 @@ import annualRoutes from "./routes/annualRoutes";
 import districtRoutes from "./routes/districtRoutes";
 import localChurchRoutes from "./routes/localChurchRoutes";
 import ministryRoutes from "./routes/ministriesRoutes";
+import councilRoutes from "./routes/councilRoutes";
 
 // [APP CONFIGURATION]
 const app: Application = express();
@@ -38,6 +39,7 @@ app.use("/annual", annualRoutes);
 app.use("/district", districtRoutes);
 app.use("/localChurch", localChurchRoutes);
 app.use("/ministry", ministryRoutes);
+app.use("/council", councilRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
