@@ -1,7 +1,8 @@
-// [DEPENDENCIES]
+// [IMPORTS]
+// Mongoose imports
 import mongoose, { Document, Schema } from "mongoose";
 
-// [DEFINITION]
+// [INTERFACE]
 export interface IFamily extends Document {
   name: String;
   father?: mongoose.Types.ObjectId;
@@ -18,8 +19,6 @@ const familySchema = new Schema<IFamily>({
   children: [{ type: Schema.Types.ObjectId, ref: "Member" }],
 });
 
-// [MODEL]
-const Family = mongoose.model<IFamily>("Family", familySchema);
-
 // [EXPORT]
+const Family = mongoose.model<IFamily>("Family", familySchema);
 export default Family;

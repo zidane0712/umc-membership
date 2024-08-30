@@ -1,27 +1,16 @@
-// [DEPENDENCIES]
+// [IMPORTS]
+// Mongoose imports
 import mongoose, { Document, Schema } from "mongoose";
 
-// [DEFINITION]
-export interface IAddress {
-  number?: string;
-  street?: string;
-  subdivision?: string;
-  barangay: string;
-  municipality: string;
-  province: string;
-  postalCode: number;
-}
+// Local imports
+import { IAddress, IBaptismConfirmation, IFamily } from "../interfaces/common";
+import {
+  addressSchema,
+  baptismConfirmationSchema,
+  familySchema,
+} from "../schemas/commonSchemas";
 
-export interface IBaptismConfirmation {
-  year?: number;
-  minister?: string;
-}
-
-export interface IFamily {
-  name: string;
-  isMember: boolean;
-}
-
+// [INTERFACE]
 export interface IMembership extends Document {
   name: {
     firstname: string;
@@ -59,37 +48,6 @@ export interface IMembership extends Document {
 }
 
 // [SCHEMA]
-const addressSchema = new Schema<IAddress>(
-  {
-    number: { type: String },
-    street: { type: String },
-    subdivision: { type: String },
-    barangay: { type: String, required: true },
-    municipality: { type: String, required: true },
-    province: { type: String, required: true },
-    postalCode: { type: Number, required: true },
-  },
-  { _id: false }
-);
-
-const baptismConfirmationSchema = new Schema<IBaptismConfirmation>(
-  {
-    year: { type: Number },
-    minister: { type: String },
-  },
-  {
-    _id: false,
-  }
-);
-
-const familySchema = new Schema<IFamily>(
-  {
-    name: { type: String, required: true },
-    isMember: { type: Boolean, default: false },
-  },
-  { _id: false }
-);
-
 const membershipSchema = new Schema<IMembership>({
   name: {
     firstname: { type: String, required: true },
@@ -229,8 +187,6 @@ membershipSchema.pre("save", async function (next) {
   next();
 });
 
-// [MODEL]
-const Membership = mongoose.model<IMembership>("Membership", membershipSchema);
-
 // [EXPORT]
+const Membership = mongoose.model<IMembership>("Membership", membershipSchema);
 export default Membership;

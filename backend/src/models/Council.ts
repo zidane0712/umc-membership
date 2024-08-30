@@ -1,7 +1,8 @@
-// [DEPENDENCIES]
+// [IMPORTS]
+// Mongoose imports
 import mongoose, { Document, Schema } from "mongoose";
 
-// [DEFINITION]
+// [INTERFACE]
 export interface IAdministrativeOffice {
   chairperson: mongoose.Types.ObjectId;
   layLeader: mongoose.Types.ObjectId;
@@ -334,8 +335,6 @@ const councilSchema = new Schema<ICouncil>({
   },
 });
 
-// [MODEL]
-const Council = mongoose.model<ICouncil>("Council", councilSchema);
-
 // [EXPORT]
+const Council = mongoose.model<ICouncil>("Council", councilSchema);
 export default Council;

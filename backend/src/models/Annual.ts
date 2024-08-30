@@ -1,7 +1,8 @@
-// [DEPENDENCIES]
+// [IMPORTS]
+// Mongoose imports
 import mongoose, { Document, Schema } from "mongoose";
 
-// [DEFINITION]
+// [INTERFACE]
 export interface IAnnual extends Document {
   name: string;
   episcopalArea: "bea" | "dea" | "mea";
@@ -30,8 +31,6 @@ annualSchema.pre("save", async function (next) {
   }
 });
 
-// [MODEL]
-const Annual = mongoose.model<IAnnual>("Annual", annualSchema);
-
 // [EXPORT]
+const Annual = mongoose.model<IAnnual>("Annual", annualSchema);
 export default Annual;

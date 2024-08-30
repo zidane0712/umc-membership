@@ -1,17 +1,12 @@
-// [DEPENDENCIES]
+// [IMPORTS]
+// Mongoose imports
 import mongoose, { Document, Schema } from "mongoose";
 
-// [DEFINITION]
-export interface IAddress {
-  number?: string;
-  street?: string;
-  subdivision?: string;
-  barangay: string;
-  municipality: string;
-  province: string;
-  postalCode: number;
-}
+// Local imports
+import { IAddress } from "../interfaces/common";
+import { addressSchema } from "../schemas/commonSchemas";
 
+// [INTERFACE]
 export interface ILocal extends Document {
   name: string;
   address: IAddress;
@@ -22,19 +17,6 @@ export interface ILocal extends Document {
 }
 
 // [SCHEMA]
-const addressSchema = new Schema<IAddress>(
-  {
-    number: { type: String },
-    street: { type: String },
-    subdivision: { type: String },
-    barangay: { type: String, required: true },
-    municipality: { type: String, required: true },
-    province: { type: String, required: true },
-    postalCode: { type: Number, required: true },
-  },
-  { _id: false }
-);
-
 const localSchema = new Schema<ILocal>({
   name: { type: String, required: true },
   address: { type: addressSchema, required: true },
@@ -79,8 +61,6 @@ localSchema.pre("save", async function (next) {
   }
 });
 
-// [MODEL]
-const Local = mongoose.model<ILocal>("Local", localSchema);
-
 // [EXPORT]
+const Local = mongoose.model<ILocal>("Local", localSchema);
 export default Local;

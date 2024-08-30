@@ -1,8 +1,11 @@
-// [DEPENDENCIES]
+// [IMPORTS]
+// Mongoose imports
 import mongoose, { Document, Schema } from "mongoose";
+
+// Local imports
 import Membership from "./Membership";
 
-// [DEFINITION]
+// [INTERFACE]
 export interface IMinistry extends Document {
   name: string;
   localChurch: mongoose.Types.ObjectId;
@@ -45,8 +48,6 @@ ministrySchema.pre("findOneAndDelete", async function (next) {
   }
 });
 
-// [MODEL]
-const Ministry = mongoose.model<IMinistry>("Ministry", ministrySchema);
-
 // [EXPORT]
+const Ministry = mongoose.model<IMinistry>("Ministry", ministrySchema);
 export default Ministry;

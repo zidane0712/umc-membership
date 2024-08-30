@@ -1,7 +1,8 @@
-// [DEPENDENCIES]
+// [IMPORTS]
+// Mongoose imports
 import mongoose, { Document, Schema } from "mongoose";
 
-// [DEFINITION]
+// [INTERFACE]
 export interface IDistrict extends Document {
   name: string;
   annualConference: mongoose.Types.ObjectId;
@@ -30,8 +31,6 @@ districtSchema.pre("save", async function (next) {
   }
 });
 
-// [MODEL]
-const District = mongoose.model<IDistrict>("District", districtSchema);
-
 // [EXPORT]
+const District = mongoose.model<IDistrict>("District", districtSchema);
 export default District;
