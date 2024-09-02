@@ -1,70 +1,70 @@
 // [IMPORTS]
 // Mongoose imports
-import mongoose, { Document, Schema } from "mongoose";
+import { Document, Schema, Types, model } from "mongoose";
 
 // [INTERFACE]
 export interface IAdministrativeOffice {
-  chairperson: mongoose.Types.ObjectId;
-  layLeader: mongoose.Types.ObjectId;
-  layDelegate: mongoose.Types.ObjectId;
-  recordingSecretary: mongoose.Types.ObjectId;
-  membershipSecretary: mongoose.Types.ObjectId;
-  assistantSecretary: mongoose.Types.ObjectId;
-  spprcChairperson: mongoose.Types.ObjectId;
-  botChairperson: mongoose.Types.ObjectId;
-  viceChairperson: mongoose.Types.ObjectId;
-  umyfPresident: mongoose.Types.ObjectId;
-  umyafPresident: mongoose.Types.ObjectId;
-  umwPresident: mongoose.Types.ObjectId;
-  ummPresident: mongoose.Types.ObjectId;
+  chairperson: Types.ObjectId;
+  layLeader: Types.ObjectId;
+  layDelegate: Types.ObjectId;
+  recordingSecretary: Types.ObjectId;
+  membershipSecretary: Types.ObjectId;
+  assistantSecretary: Types.ObjectId;
+  spprcChairperson: Types.ObjectId;
+  botChairperson: Types.ObjectId;
+  viceChairperson: Types.ObjectId;
+  umyfPresident: Types.ObjectId;
+  umyafPresident: Types.ObjectId;
+  umwPresident: Types.ObjectId;
+  ummPresident: Types.ObjectId;
 }
 
 export interface INurture {
-  chairperson: mongoose.Types.ObjectId;
-  worship: mongoose.Types.ObjectId;
-  assistant: mongoose.Types.ObjectId;
-  sundaySchool: mongoose.Types.ObjectId;
-  christianEducation: mongoose.Types.ObjectId;
-  stewardship: mongoose.Types.ObjectId;
-  members: mongoose.Types.ObjectId[];
+  chairperson: Types.ObjectId;
+  worship: Types.ObjectId;
+  assistant: Types.ObjectId;
+  sundaySchool: Types.ObjectId;
+  christianEducation: Types.ObjectId;
+  stewardship: Types.ObjectId;
+  members: Types.ObjectId[];
 }
 
 export interface IOutreach {
-  chairperson: mongoose.Types.ObjectId;
-  viceChairperson: mongoose.Types.ObjectId;
-  members: mongoose.Types.ObjectId[];
+  chairperson: Types.ObjectId;
+  viceChairperson: Types.ObjectId;
+  members: Types.ObjectId[];
 }
 
 export interface IWitness {
-  chairperson: mongoose.Types.ObjectId;
-  viceChairperson: mongoose.Types.ObjectId;
-  membershipCare: mongoose.Types.ObjectId;
-  members: mongoose.Types.ObjectId[];
+  chairperson: Types.ObjectId;
+  viceChairperson: Types.ObjectId;
+  membershipCare: Types.ObjectId;
+  members: Types.ObjectId[];
 }
 
 export interface IChurchHistorian {
-  chairperson: mongoose.Types.ObjectId;
-  assistant: mongoose.Types.ObjectId;
+  chairperson: Types.ObjectId;
+  assistant: Types.ObjectId;
 }
 
 export interface ICommunication {
-  chairperson: mongoose.Types.ObjectId;
-  assistant: mongoose.Types.ObjectId;
-  members: mongoose.Types.ObjectId[];
+  chairperson: Types.ObjectId;
+  assistant: Types.ObjectId;
+  members: Types.ObjectId[];
 }
 
 export interface IFinance {
-  financeChairperson: mongoose.Types.ObjectId;
-  treasurer: mongoose.Types.ObjectId;
-  auditor: mongoose.Types.ObjectId;
-  financeSecretary: mongoose.Types.ObjectId;
-  members: mongoose.Types.ObjectId[];
+  financeChairperson: Types.ObjectId;
+  treasurer: Types.ObjectId;
+  auditor: Types.ObjectId;
+  financeSecretary: Types.ObjectId;
+  members: Types.ObjectId[];
 }
 
 export interface ICouncil extends Document {
   startYear: Date;
   endYear: Date;
-  localChurch: mongoose.Types.ObjectId;
+  localChurch: Types.ObjectId;
   administrativeOffice: IAdministrativeOffice;
   nurture: INurture;
   outreach: IOutreach;
@@ -78,69 +78,69 @@ export interface ICouncil extends Document {
 const administrativeOfficeSchema = new Schema<IAdministrativeOffice>(
   {
     chairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Council Chairperson is required"],
     },
     layLeader: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Lay Leader is required"],
     },
     layDelegate: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Lay Delegate is required"],
     },
     recordingSecretary: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Recording Secretary is required"],
     },
     membershipSecretary: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Membership Secretary is required"],
     },
     assistantSecretary: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Assistant Secretary is required"],
     },
     spprcChairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "SPPRC Chairperson is required"],
     },
     botChairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "BOT Chairperson is required"],
     },
     viceChairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "ViceChairperson is required"],
     },
     umyfPresident: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "UMYF President is required"],
     },
     umyafPresident: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "UMYAF President is required"],
     },
     umwPresident: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "UMW President is required"],
     },
     ummPresident: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "UMM President is required"],
     },
   },
   {
@@ -151,36 +151,36 @@ const administrativeOfficeSchema = new Schema<IAdministrativeOffice>(
 const nurtureSchema = new Schema<INurture>(
   {
     chairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Nurture Chairperson is required"],
     },
     worship: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Worship Chairperson is required"],
     },
     assistant: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Nurture Assistant is required"],
     },
     sundaySchool: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Sunday School Superintendent is required"],
     },
     christianEducation: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "CE Chairperson is required"],
     },
     stewardship: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Stewardship Chairperson is required"],
     },
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "Membership" }],
+    members: [{ type: Schema.Types.ObjectId, ref: "Membership" }],
   },
   {
     _id: false,
@@ -190,16 +190,16 @@ const nurtureSchema = new Schema<INurture>(
 const outreachSchema = new Schema<IOutreach>(
   {
     chairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Outreach Chairperson is required"],
     },
     viceChairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Outreach Vice Chairperson is required"],
     },
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "Membership" }],
+    members: [{ type: Schema.Types.ObjectId, ref: "Membership" }],
   },
   {
     _id: false,
@@ -209,21 +209,21 @@ const outreachSchema = new Schema<IOutreach>(
 const witnessSchema = new Schema<IWitness>(
   {
     chairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Witness Chairperson is required"],
     },
     viceChairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Witness Vice Chairperson is required"],
     },
     membershipCare: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Membership Care Chairperson is required"],
     },
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "Membership" }],
+    members: [{ type: Schema.Types.ObjectId, ref: "Membership" }],
   },
   {
     _id: false,
@@ -233,14 +233,14 @@ const witnessSchema = new Schema<IWitness>(
 const churchHistorianSchema = new Schema<IChurchHistorian>(
   {
     chairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Church Historian is required"],
     },
     assistant: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Church History Assistant is required"],
     },
   },
   {
@@ -251,16 +251,16 @@ const churchHistorianSchema = new Schema<IChurchHistorian>(
 const communicationsSchema = new Schema<ICommunication>(
   {
     chairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Communications Chairperson is required"],
     },
     assistant: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Communications Assistant is required"],
     },
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "Membership" }],
+    members: [{ type: Schema.Types.ObjectId, ref: "Membership" }],
   },
   {
     _id: false,
@@ -270,26 +270,26 @@ const communicationsSchema = new Schema<ICommunication>(
 const financeSchema = new Schema<IFinance>(
   {
     financeChairperson: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Finance Chairperson is required"],
     },
     treasurer: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Treasurer is required"],
     },
     auditor: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Auditor is required"],
     },
     financeSecretary: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
-      required: true,
+      required: [true, "Finance Secretary is required"],
     },
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "Membership" }],
+    members: [{ type: Schema.Types.ObjectId, ref: "Membership" }],
   },
   {
     _id: false,
@@ -302,39 +302,39 @@ const councilSchema = new Schema<ICouncil>({
   localChurch: {
     type: Schema.Types.ObjectId,
     ref: "Local",
-    required: true,
+    required: [true, "Local Church is required"],
     index: true,
   },
   administrativeOffice: {
     type: administrativeOfficeSchema,
-    required: true,
+    required: [true, "Administrative Office is required"],
   },
   nurture: {
     type: nurtureSchema,
-    required: true,
+    required: [true, "Nurture is required"],
   },
   outreach: {
     type: outreachSchema,
-    required: true,
+    required: [true, "Outreach is required"],
   },
   witness: {
     type: witnessSchema,
-    required: true,
+    required: [true, "Witness is required"],
   },
   churchHistorian: {
     type: churchHistorianSchema,
-    required: true,
+    required: [true, "Church Historian is required"],
   },
   communications: {
     type: communicationsSchema,
-    required: true,
+    required: [true, "Communications is required"],
   },
   finance: {
     type: financeSchema,
-    required: true,
+    required: [true, "Finance is required"],
   },
 });
 
 // [EXPORT]
-const Council = mongoose.model<ICouncil>("Council", councilSchema);
+const Council = model<ICouncil>("Council", councilSchema);
 export default Council;

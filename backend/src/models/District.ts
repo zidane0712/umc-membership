@@ -1,17 +1,25 @@
 // [IMPORTS]
 // Mongoose imports
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, model, Types } from "mongoose";
 
 // [INTERFACE]
 export interface IDistrict extends Document {
   name: string;
-  annualConference: mongoose.Types.ObjectId;
+  annualConference: Types.ObjectId;
 }
 
 // [SCHEMA]
 const districtSchema = new Schema<IDistrict>({
-  name: { type: String, required: true },
-  annualConference: { type: Schema.Types.ObjectId, ref: "Annual" },
+  name: {
+    type: String,
+    required: [true, "District Conference is required"],
+  },
+  annualConference: {
+    type: Schema.Types.ObjectId,
+    ref: "Annual",
+    index: true,
+    required: [true, "Annual Conference is required"],
+  },
 });
 
 // [MIDDLEWARE]
@@ -31,6 +39,9 @@ districtSchema.pre("save", async function (next) {
   }
 });
 
+// [INDEX]
+districtSchema.index({ annualConference: 1 });
+
 // [EXPORT]
-const District = mongoose.model<IDistrict>("District", districtSchema);
+const District = model<IDistrict>("District", districtSchema);
 export default District;

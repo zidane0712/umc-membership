@@ -1,6 +1,6 @@
 // [IMPORTS]
 // Mongoose imports
-import mongoose, { Document, Schema } from "mongoose";
+import { Document, Schema, model } from "mongoose";
 
 // [INTERFACE]
 export interface IAnnual extends Document {
@@ -10,8 +10,16 @@ export interface IAnnual extends Document {
 
 // [SCHEMA]
 const annualSchema = new Schema<IAnnual>({
-  name: { type: String, required: true },
-  episcopalArea: { type: String, enum: ["bea", "dea", "mea"], required: true },
+  name: {
+    type: String,
+    required: true,
+  },
+  episcopalArea: {
+    type: String,
+    enum: ["bea", "dea", "mea"],
+    required: [true, "Episcopal Area is required"],
+    index: true,
+  },
 });
 
 // [MIDDLEWARE]
@@ -31,6 +39,9 @@ annualSchema.pre("save", async function (next) {
   }
 });
 
+// [INDEX]
+annualSchema.index({ episcopalArea: 1 });
+
 // [EXPORT]
-const Annual = mongoose.model<IAnnual>("Annual", annualSchema);
+const Annual = model<IAnnual>("Annual", annualSchema);
 export default Annual;

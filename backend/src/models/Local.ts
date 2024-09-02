@@ -1,6 +1,6 @@
 // [IMPORTS]
 // Mongoose imports
-import mongoose, { Document, Schema } from "mongoose";
+import { Document, Schema, Types, model } from "mongoose";
 
 // Local imports
 import { IAddress } from "../interfaces/common";
@@ -10,8 +10,8 @@ import { addressSchema } from "../schemas/commonSchemas";
 export interface ILocal extends Document {
   name: string;
   address: IAddress;
-  district: mongoose.Types.ObjectId;
-  annualConference: mongoose.Types.ObjectId;
+  district: Types.ObjectId;
+  annualConference: Types.ObjectId;
   contactNo: string;
   anniversaryDate: Date;
 }
@@ -23,12 +23,14 @@ const localSchema = new Schema<ILocal>({
   district: {
     type: Schema.Types.ObjectId,
     ref: "District",
-    required: true,
+    required: [true, "District Conference is required"],
+    index: true,
   },
   annualConference: {
     type: Schema.Types.ObjectId,
     ref: "Annual",
-    required: true,
+    required: [true, "Annual Conference is required"],
+    index: true,
   },
   contactNo: {
     type: String,
@@ -40,7 +42,11 @@ const localSchema = new Schema<ILocal>({
       message: (props) => `${props.value} is not a valid cellphone number`,
     },
   },
-  anniversaryDate: { type: Date, required: true },
+  anniversaryDate: {
+    type: Date,
+    required: [true, "Anniversary Date is required"],
+    index: true,
+  },
 });
 
 // [MIDDLEWARE]
@@ -62,5 +68,5 @@ localSchema.pre("save", async function (next) {
 });
 
 // [EXPORT]
-const Local = mongoose.model<ILocal>("Local", localSchema);
+const Local = model<ILocal>("Local", localSchema);
 export default Local;

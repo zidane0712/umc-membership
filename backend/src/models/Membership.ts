@@ -1,6 +1,6 @@
 // [IMPORTS]
 // Mongoose imports
-import mongoose, { Document, Schema } from "mongoose";
+import { model, Document, Schema, Types } from "mongoose";
 
 // Local imports
 import { IAddress, IBaptismConfirmation, IFamily } from "../interfaces/common";
@@ -10,20 +10,49 @@ import {
   familySchema,
 } from "../schemas/commonSchemas";
 
+// [ENUM]
+enum Gender {
+  Male = "male",
+  Female = "female",
+}
+
+enum CivilStatus {
+  Single = "single",
+  Married = "married",
+  Separated = "separated",
+  widowed = "widowed",
+}
+
+enum MembershipClassification {
+  Baptized = "baptized",
+  Professing = "professing",
+  Affiliate = "affiliate",
+  Associate = "associate",
+  Constituent = "constituent",
+}
+
+enum Organization {
+  UMM = "umm",
+  UMWSCS = "umwscs",
+  UMYAF = "umyaf",
+  UMYF = "umyf",
+  UMCF = "umcf",
+}
+
 // [INTERFACE]
 export interface IMembership extends Document {
   name: {
     firstname: string;
-    middlename: string;
+    middlename?: string;
     lastname: string;
-    suffix: string;
+    suffix?: string;
   };
   address: {
     permanent: IAddress;
     current: IAddress;
   };
-  gender: "male" | "female";
-  civilStatus: "single" | "married" | "separated" | "widowed";
+  gender: Gender;
+  civilStatus: CivilStatus;
   birthday: Date;
   age: number;
   contactNo: string;
@@ -33,47 +62,68 @@ export interface IMembership extends Document {
   mother?: IFamily;
   spouse?: IFamily;
   children?: IFamily[];
-  membershipClassification:
-    | "baptized"
-    | "professing"
-    | "affiliate"
-    | "associate"
-    | "constituent";
+  membershipClassification: MembershipClassification;
   isActive: boolean;
-  organization: "umm" | "umwscs" | "umyaf" | "umyf" | "umcf";
-  ministries?: mongoose.Types.ObjectId[];
-  annualConference: mongoose.Types.ObjectId;
-  district: mongoose.Types.ObjectId;
-  localChurch: mongoose.Types.ObjectId;
+  organization: Organization;
+  ministries?: Types.ObjectId[];
+  annualConference: Types.ObjectId;
+  district: Types.ObjectId;
+  localChurch: Types.ObjectId;
 }
 
 // [SCHEMA]
 const membershipSchema = new Schema<IMembership>({
   name: {
-    firstname: { type: String, required: true },
-    middlename: { type: String },
-    lastname: { type: String, required: true },
-    suffix: { type: String },
+    firstname: {
+      type: String,
+      required: [true, "First name is required"],
+      trim: true,
+    },
+    middlename: {
+      type: String,
+    },
+    lastname: {
+      type: String,
+      required: [true, "Last name is required"],
+    },
+    suffix: {
+      type: String,
+    },
   },
   address: {
-    permanent: { type: addressSchema, required: true },
-    current: { type: addressSchema, required: true },
+    permanent: {
+      type: addressSchema,
+      required: [true, "Permanent address is required"],
+    },
+    current: {
+      type: addressSchema,
+      required: [true, "Current address is required"],
+    },
   },
   gender: {
     type: String,
     enum: ["male", "female"],
-    required: true,
+    required: [true, "Gender is required"],
+    index: true,
   },
   civilStatus: {
     type: String,
     enum: ["single", "married", "separated", "widowed"],
-    required: true,
+    required: [true, "Civil status is required"],
+    index: true,
   },
-  birthday: { type: Date, required: true },
-  age: { type: Number },
+  birthday: {
+    type: Date,
+    required: [true, "Birth date is required"],
+    index: true,
+  },
+  age: {
+    type: Number,
+    index: true,
+  },
   contactNo: {
     type: String,
-    required: true,
+    required: [true, "Contact number is required"],
     validate: {
       validator: function (v: string) {
         return /^09\d{9}$/.test(v);
@@ -83,7 +133,7 @@ const membershipSchema = new Schema<IMembership>({
   },
   baptism: {
     type: baptismConfirmationSchema,
-    required: true,
+    required: [true, "Baptism information is required"],
     validate: {
       validator: function (value: IBaptismConfirmation) {
         return value.year !== undefined || value.minister !== undefined;
@@ -91,10 +141,11 @@ const membershipSchema = new Schema<IMembership>({
       message:
         "Either year of baptism or officiating minister must be provided.",
     },
+    index: true,
   },
   confirmation: {
     type: baptismConfirmationSchema,
-    required: true,
+    required: [true, "Confirmation information is required"],
     validate: {
       validator: function (value: IBaptismConfirmation) {
         return value.year !== undefined || value.minister !== undefined;
@@ -102,20 +153,35 @@ const membershipSchema = new Schema<IMembership>({
       message:
         "Either year of confirmation or officiating minister must be provided.",
     },
+    index: true,
   },
-  father: { type: familySchema },
-  mother: { type: familySchema },
-  spouse: { type: familySchema },
-  children: { type: [familySchema] },
+  father: {
+    type: familySchema,
+  },
+  mother: {
+    type: familySchema,
+  },
+  spouse: {
+    type: familySchema,
+  },
+  children: {
+    type: [familySchema],
+  },
   membershipClassification: {
     type: String,
     enum: ["baptized", "professing", "affiliate", "associate", "constituent"],
-    required: true,
+    required: [true, "Membership classification is required"],
+    index: true,
   },
-  isActive: { type: Boolean, default: false },
+  isActive: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
   organization: {
     type: String,
     enum: ["umm", "umwscs", "umyaf", "umyf", "umcf"],
+    index: true,
   },
   ministries: [
     {
@@ -126,19 +192,19 @@ const membershipSchema = new Schema<IMembership>({
   annualConference: {
     type: Schema.Types.ObjectId,
     ref: "Annual",
-    required: true,
+    required: [true, "Annual Conference is required"],
     index: true,
   },
   district: {
     type: Schema.Types.ObjectId,
     ref: "District",
-    required: true,
+    required: [true, "District Conference is required"],
     index: true,
   },
   localChurch: {
     type: Schema.Types.ObjectId,
     ref: "Local",
-    required: true,
+    required: [true, "Local Church is required"],
     index: true,
   },
 });
@@ -162,13 +228,14 @@ membershipSchema.pre("save", async function (next) {
 
   // Organization
   if (this.age > 40) {
-    this.organization = this.gender === "male" ? "umm" : "umwscs";
+    this.organization =
+      this.gender === "male" ? Organization.UMM : Organization.UMWSCS;
   } else if (this.age <= 40 && this.age > 24) {
-    this.organization = "umyaf";
+    this.organization = Organization.UMYAF;
   } else if (this.age <= 24 && this.age > 12) {
-    this.organization = "umyf";
+    this.organization = Organization.UMYF;
   } else if (this.age <= 12) {
-    this.organization = "umcf";
+    this.organization = Organization.UMCF;
   }
 
   // Duplicate Check
@@ -187,6 +254,22 @@ membershipSchema.pre("save", async function (next) {
   next();
 });
 
+// [INDEX]
+// Single use indexes
+membershipSchema.index({ gender: 1 });
+membershipSchema.index({ civilStatus: 1 });
+membershipSchema.index({ birthday: 1 });
+membershipSchema.index({ age: 1 });
+membershipSchema.index({ membershipClassification: 1 });
+membershipSchema.index({ isActive: 1 });
+membershipSchema.index({ organization: 1 });
+membershipSchema.index({ annualConference: 1 });
+membershipSchema.index({ district: 1 });
+membershipSchema.index({ localChurch: 1 });
+
+//Composite indexes
+membershipSchema.index({ name: 1, district: 1, annualConference: 1 });
+
 // [EXPORT]
-const Membership = mongoose.model<IMembership>("Membership", membershipSchema);
+const Membership = model<IMembership>("Membership", membershipSchema);
 export default Membership;

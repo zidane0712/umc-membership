@@ -1,6 +1,6 @@
 // [IMPORTS]
 // Mongoose imports
-import mongoose, { Document, Schema } from "mongoose";
+import { Document, Schema, Types, model } from "mongoose";
 
 // Local imports
 import Membership from "./Membership";
@@ -8,25 +8,25 @@ import Membership from "./Membership";
 // [INTERFACE]
 export interface IMinistry extends Document {
   name: string;
-  localChurch: mongoose.Types.ObjectId;
-  members?: mongoose.Types.ObjectId[];
+  localChurch: Types.ObjectId;
+  members?: Types.ObjectId[];
 }
 
 // [SCHEMA]
 const ministrySchema = new Schema<IMinistry>({
   name: {
     type: String,
-    required: [true, "Name is required"],
+    required: [true, "Ministry is required"],
     trim: true,
   },
   localChurch: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: "Local",
     required: [true, "Local Church is required"],
   },
   members: [
     {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Membership",
     },
   ],
@@ -49,5 +49,5 @@ ministrySchema.pre("findOneAndDelete", async function (next) {
 });
 
 // [EXPORT]
-const Ministry = mongoose.model<IMinistry>("Ministry", ministrySchema);
+const Ministry = model<IMinistry>("Ministry", ministrySchema);
 export default Ministry;
