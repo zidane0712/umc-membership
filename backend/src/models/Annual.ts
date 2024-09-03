@@ -6,6 +6,7 @@ import { Document, Schema, model } from "mongoose";
 export interface IAnnual extends Document {
   name: string;
   episcopalArea: "bea" | "dea" | "mea";
+  customId: string;
 }
 
 // [SCHEMA]
@@ -21,6 +22,7 @@ const annualSchema = new Schema<IAnnual>({
     required: [true, "Episcopal Area is required"],
     index: true,
   },
+  customId: { type: String, unique: true },
 });
 
 // [MIDDLEWARE]

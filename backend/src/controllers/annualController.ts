@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 // Local import
 import { handleError } from "../utils/handleError";
 import Annual from "../models/Annual";
+import Counter from "../models/Counter";
 
 // [CONTROLLERS]
 // Gets all annual conferences
@@ -59,7 +60,17 @@ export const createAnnual = async (req: Request, res: Response) => {
       });
     }
 
-    const annualConference = new Annual(req.body);
+    // Get the next sequence number from a counter collection
+    const counter = await Counter.findOneAndUpdate(
+      { _id: "annualId" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    // Generate custom Id
+    const customId = `AC-${counter?.seq.toString().padStart(4, "0")}`;
+
+    const annualConference = new Annual({ ...req.body, customId });
     const newAnnualConference = await annualConference.save();
     res.status(201).json(newAnnualConference);
   } catch (err) {
