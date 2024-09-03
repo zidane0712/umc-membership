@@ -13,6 +13,7 @@ const annualSchema = new Schema<IAnnual>({
   name: {
     type: String,
     required: true,
+    trim: true,
   },
   episcopalArea: {
     type: String,

@@ -9,7 +9,27 @@ import Annual from "../models/Annual";
 // Gets all annual conferences
 export const getAllAnnual = async (req: Request, res: Response) => {
   try {
-    const annualConferences = await Annual.find();
+    const { episcopalArea, search } = req.query;
+
+    // Define a filter object, initially empty
+    const filter: { [key: string]: any } = {};
+
+    // If episcopalArea is provided, add it to the filter
+    if (episcopalArea) {
+      filter.episcopalArea = episcopalArea;
+    }
+
+    // If search is provided, perform a case-insensitive search on specific fields
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { episcopalArea: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Fetch the annual conferences based on the filter
+    const annualConferences = await Annual.find(filter);
+
     res.status(200).json({ success: true, data: annualConferences });
   } catch (err) {
     handleError(
@@ -111,12 +131,12 @@ export const deleteAnnual = async (req: Request, res: Response) => {
     if (!deletedAnnual) {
       return res
         .status(404)
-        .json({ success: false, message: "Annual conference not found" });
+        .json({ success: false, message: "Annual Conference not found" });
     }
 
     res.status(200).json({
       success: true,
-      message: "Annual conference deleted successfully",
+      message: "Annual Conference deleted successfully",
     });
   } catch (err) {
     handleError(res, err, "An error occurred while deleting annual conference");
