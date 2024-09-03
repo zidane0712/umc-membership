@@ -1,4 +1,4 @@
-// [DEPENDENCIES]
+// [IMPORT]
 import Joi from "joi";
 
 // [JOI SCHEMA]

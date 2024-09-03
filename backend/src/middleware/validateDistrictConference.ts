@@ -1,4 +1,4 @@
-// [DEPENDENCIES]
+// [IMPORT]
 import { Request, Response, NextFunction } from "express";
 import District from "../models/District";
 

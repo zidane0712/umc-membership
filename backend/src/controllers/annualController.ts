@@ -1,19 +1,22 @@
-// [DEPENDENCIES]
+// [IMPORT]
+// Global import
 import { Request, Response } from "express";
-
-// [IMPORTS]
-import Annual from "../models/Annual";
+// Local import
 import { handleError } from "../utils/handleError";
+import Annual from "../models/Annual";
 
 // [CONTROLLERS]
-
 // Gets all annual conferences
 export const getAllAnnual = async (req: Request, res: Response) => {
   try {
     const annualConferences = await Annual.find();
     res.status(200).json({ success: true, data: annualConferences });
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(
+      res,
+      err,
+      "An error occurred while getting all annual conferences"
+    );
   }
 };
 
@@ -40,7 +43,7 @@ export const createAnnual = async (req: Request, res: Response) => {
     const newAnnualConference = await annualConference.save();
     res.status(201).json(newAnnualConference);
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(res, err, "An error occurred while creating annual conference");
   }
 };
 
@@ -57,8 +60,8 @@ export const getAnnualById = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: annual });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while getting annual conference");
   }
 };
 
@@ -94,8 +97,8 @@ export const updateAnnual = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: updateAnnual });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while updating annual conference");
   }
 };
 
@@ -115,7 +118,7 @@ export const deleteAnnual = async (req: Request, res: Response) => {
       success: true,
       message: "Annual conference deleted successfully",
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while deleting annual conference");
   }
 };

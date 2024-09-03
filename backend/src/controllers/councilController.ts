@@ -1,7 +1,7 @@
-// [DEPENDENCIES]
-import { NextFunction, Request, Response } from "express";
-
-// [IMPORTS]
+// [IMPORT]
+// Express import
+import { Request, Response } from "express";
+// Local import
 import { handleError } from "../utils/handleError";
 import Council from "../models/Council";
 import Membership from "../models/Membership";
@@ -59,7 +59,7 @@ export const getAllCouncil = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, data: councils });
   } catch (err) {
-    handleError(res, err, "An unknown error occurred");
+    handleError(res, err, "An error occurred while getting all council");
   }
 };
 
@@ -167,7 +167,7 @@ export const createCouncil = async (req: Request, res: Response) => {
 
     res.status(201).json(newCouncil);
   } catch (err) {
-    handleError(res, err, "An unknown error occurred");
+    handleError(res, err, "An error occurred while creating council");
   }
 };
 
@@ -227,8 +227,8 @@ export const getCouncilById = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: council });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while getting council");
   }
 };
 
@@ -343,8 +343,8 @@ export const updateCouncil = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: updateCouncil });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while updating council");
   }
 };
 
@@ -363,7 +363,7 @@ export const deleteCouncil = async (req: Request, res: Response) => {
     res
       .status(200)
       .json({ success: true, message: "Council deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while deleting council");
   }
 };

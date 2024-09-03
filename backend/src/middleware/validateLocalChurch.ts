@@ -1,4 +1,4 @@
-// [DEPENDENCIES]
+// [IMPORT]
 import { Request, Response, NextFunction } from "express";
 import Local from "../models/Local";
 

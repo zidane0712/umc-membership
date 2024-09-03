@@ -1,8 +1,8 @@
-// [DEPENDENCIES]
+// [IMPORT]
+// Express import
 import { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
-
-// [IMPORTS]
+// Local import
 import Local from "../models/Local";
 import Membership from "../models/Membership";
 import Ministry from "../models/Ministries";
@@ -18,7 +18,7 @@ export const getAllMinistry = async (req: Request, res: Response) => {
       .populate("members", "name");
     res.status(200).json({ success: true, data: ministries });
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(res, err, "An error occurred while getting all ministry");
   }
 };
 
@@ -29,7 +29,7 @@ export const createMinistry = async (req: Request, res: Response) => {
     const newMinistry = await ministry.save();
     res.status(201).json(newMinistry);
   } catch (err) {
-    handleError(res, err, "An unknonw error occured");
+    handleError(res, err, "An error occurred while creating ministry");
   }
 };
 
@@ -48,8 +48,8 @@ export const getMinistryById = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: ministry });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while getting ministry");
   }
 };
 
@@ -77,8 +77,8 @@ export const updateMinistry = async (req: Request, res: Response) => {
     }
 
     res.status(200).json(updateMinistry);
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while updating ministry");
   }
 };
 
@@ -97,8 +97,8 @@ export const deleteMinistry = async (req: Request, res: Response) => {
     res
       .status(200)
       .json({ success: true, message: "Ministry deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while deleting ministry");
   }
 };
 

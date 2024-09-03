@@ -1,7 +1,7 @@
-// [DEPENDENCIES]
+// [IMPORT]
+// Express import
 import { NextFunction, Request, Response } from "express";
-
-// [IMPORTS]
+// Local import
 import Local from "../models/Local";
 import District from "../models/District";
 import Annual from "../models/Annual";
@@ -16,7 +16,7 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       .populate("annualConference", "name");
     res.status(200).json({ success: true, data: localChurch });
   } catch (err) {
-    handleError(res, err, "An unknown error occurred");
+    handleError(res, err, "An error occurred while getting all local church");
   }
 };
 
@@ -45,7 +45,7 @@ export const createLocalChurch = async (req: Request, res: Response) => {
     const newLocalChurch = await localChurch.save();
     res.status(201).json(newLocalChurch);
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(res, err, "An error occurred while creating local church");
   }
 };
 
@@ -64,8 +64,8 @@ export const getLocalChurchById = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: localChurch });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while getting local church");
   }
 };
 
@@ -118,8 +118,8 @@ export const updateLocalChurch = async (req: Request, res: Response) => {
     }
 
     res.status(200).json(updateLocal);
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while updating local church");
   }
 };
 
@@ -138,7 +138,7 @@ export const deleteLocalChurch = async (req: Request, res: Response) => {
     res
       .status(200)
       .json({ success: true, message: "Local Church deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while deleting local church");
   }
 };

@@ -1,7 +1,7 @@
-// [DEPENDENCIES]
+// [IMPORT]
+// Express import
 import { NextFunction, Request, Response } from "express";
-
-// [IMPORTS]
+// Local import
 import District from "../models/District";
 import Annual from "../models/Annual";
 import { handleError } from "../utils/handleError";
@@ -13,7 +13,11 @@ export const getAllDistrict = async (req: Request, res: Response) => {
     const districts = await District.find().populate("annualConference");
     res.status(200).json({ success: true, data: districts });
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(
+      res,
+      err,
+      "An error occurred while getting all district conference"
+    );
   }
 };
 
@@ -41,7 +45,11 @@ export const createDistrict = async (req: Request, res: Response) => {
     const newDistrict = await districtConference.save();
     res.status(201).json(newDistrict);
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(
+      res,
+      err,
+      "An error occurred while creating district conference"
+    );
   }
 };
 
@@ -58,8 +66,12 @@ export const getDistrictById = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: district });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(
+      res,
+      err,
+      "An error occurred while getting district conference"
+    );
   }
 };
 
@@ -105,8 +117,12 @@ export const updateDistrict = async (
     }
 
     res.status(200).json(updateDistrict);
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(
+      res,
+      err,
+      "An error occurred while updating district conference"
+    );
   }
 };
 
@@ -125,7 +141,11 @@ export const deleteDistrict = async (req: Request, res: Response) => {
     res
       .status(200)
       .json({ success: true, message: "District deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(
+      res,
+      err,
+      "An error occurred while deleting district conference"
+    );
   }
 };

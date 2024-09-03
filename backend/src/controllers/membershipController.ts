@@ -1,17 +1,16 @@
-// [DEPENDENCIES]
+// [IMPORT]
+// Express import
 import { NextFunction, Request, Response } from "express";
-
-// [IMPORTS]
+import mongoose from "mongoose";
+// Local import
+import { handleError } from "../utils/handleError";
 import Membership from "../models/Membership";
 import Annual from "../models/Annual";
-import { handleError } from "../utils/handleError";
 import District from "../models/District";
 import Local from "../models/Local";
 import Ministry from "../models/Ministries";
-import mongoose from "mongoose";
 
 // [CONTROLLERS]
-
 // Gets all membership
 export const getAllMemberships = async (req: Request, res: Response) => {
   try {
@@ -22,7 +21,7 @@ export const getAllMemberships = async (req: Request, res: Response) => {
       .populate("ministries", "name");
     res.status(200).json({ success: true, data: memberships });
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(res, err, "An error occurred while getting all member");
   }
 };
 
@@ -51,7 +50,7 @@ export const createMembership = async (req: Request, res: Response) => {
     const newMembership = await membership.save();
     res.status(201).json(newMembership);
   } catch (err) {
-    handleError(res, err, "An unknown error occured");
+    handleError(res, err, "An error occurred while creating member");
   }
 };
 
@@ -72,8 +71,8 @@ export const getMemberById = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ success: true, data: member });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while getting member by id");
   }
 };
 
@@ -139,8 +138,8 @@ export const updateMember = async (
     }
 
     res.status(200).json(updateMembership);
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while updating member");
   }
 };
 
@@ -159,8 +158,8 @@ export const deleteMember = async (req: Request, res: Response) => {
     res
       .status(200)
       .json({ success: true, message: "Member deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: (error as Error).message });
+  } catch (err) {
+    handleError(res, err, "An error occurred while deleting member");
   }
 };
 

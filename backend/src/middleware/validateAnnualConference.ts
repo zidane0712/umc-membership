@@ -1,4 +1,4 @@
-// [DEPENDENCIES]
+// [IMPORT]
 import { Request, Response, NextFunction } from "express";
 import Annual from "../models/Annual";
 
