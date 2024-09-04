@@ -22,10 +22,7 @@ export const getAllAnnual = async (req: Request, res: Response) => {
 
     // If search is provided, perform a case-insensitive search on specific fields
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { episcopalArea: { $regex: search, $options: "i" } },
-      ];
+      filter.$or = [{ name: { $regex: search, $options: "i" } }];
     }
 
     // Fetch the annual conferences based on the filter
@@ -72,6 +69,7 @@ export const createAnnual = async (req: Request, res: Response) => {
 
     const annualConference = new Annual({ ...req.body, customId });
     const newAnnualConference = await annualConference.save();
+
     res.status(201).json(newAnnualConference);
   } catch (err) {
     handleError(res, err, "An error occurred while creating annual conference");
@@ -82,6 +80,7 @@ export const createAnnual = async (req: Request, res: Response) => {
 export const getAnnualById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
     const annual = await Annual.findById(id);
 
     if (!annual) {

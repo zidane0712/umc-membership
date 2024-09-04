@@ -35,10 +35,6 @@ export const createLocalChurchSchema = Joi.object({
     "string.base": "District conference must be a string",
     "any.required": "District conference is required",
   }),
-  annualConference: Joi.string().required().messages({
-    "string.base": "Annual conference must be a string",
-    "any.required": "Annual conference is required",
-  }),
   contactNo: Joi.string()
     .pattern(/^09\d{9}$/)
     .required()
@@ -58,7 +54,6 @@ export const updateLocalChurchSchema = Joi.object({
   name: Joi.string().optional(),
   address: addressSchema.optional(),
   district: Joi.string().optional(),
-  annualConference: Joi.string().optional(),
   contactNo: Joi.string().optional(),
   anniversaryDate: Joi.date().optional(),
 });

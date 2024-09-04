@@ -2,21 +2,72 @@
 // Express import
 import { NextFunction, Request, Response } from "express";
 // Local import
+import { handleError } from "../utils/handleError";
 import District from "../models/District";
 import Annual from "../models/Annual";
-import { handleError } from "../utils/handleError";
+import Counter from "../models/Counter";
 
 // [CONTROLLERS]
 // Gets all district
 export const getAllDistrict = async (req: Request, res: Response) => {
   try {
-    const districts = await District.find().populate("annualConference");
+    const { episcopalArea, search } = req.query;
+
+    // Define the aggregation pipeline
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: "annuals",
+          localField: "annualConference",
+          foreignField: "_id",
+          as: "annualConference",
+        },
+      },
+      {
+        $unwind: "$annualConference",
+      },
+      {
+        $project: {
+          name: 1,
+          customId: 1,
+          "annualConference.name": 1,
+          "annualConference.episcopalArea": 1,
+        },
+      },
+    ];
+
+    // If episcopalArea is provided, add it to the match stage
+    if (episcopalArea) {
+      pipeline.push({
+        $match: {
+          "annualConference.episcopalArea": episcopalArea,
+        },
+      });
+    }
+
+    // If search is provided, add it to the match stage
+    if (search) {
+      pipeline.push({
+        $match: {
+          name: { $regex: search, $options: "i" },
+        },
+      });
+    }
+
+    // Perform sorting if needed
+    pipeline.push({
+      $sort: { name: 1 },
+    });
+
+    // Execute the aggregation pipeline
+    const districts = await District.aggregate(pipeline);
+
     res.status(200).json({ success: true, data: districts });
   } catch (err) {
     handleError(
       res,
       err,
-      "An error occurred while getting all district conference"
+      "An error occurred while getting all district conferences"
     );
   }
 };
@@ -40,9 +91,19 @@ export const createDistrict = async (req: Request, res: Response) => {
       });
     }
 
-    // If it doesn't exist, create a new one
-    const districtConference = new District(req.body);
+    // Get the next sequence number from a counter collection
+    const counter = await Counter.findOneAndUpdate(
+      { _id: "districtId" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    // Generate custom Id
+    const customId = `DC-${counter?.seq.toString().padStart(4, "0")}`;
+
+    const districtConference = new District({ ...req.body, customId });
     const newDistrict = await districtConference.save();
+
     res.status(201).json(newDistrict);
   } catch (err) {
     handleError(
@@ -57,7 +118,11 @@ export const createDistrict = async (req: Request, res: Response) => {
 export const getDistrictById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const district = await District.findById(id).populate("annualConference");
+
+    const district = await District.findById(id).populate(
+      "annualConference",
+      "name episcopalArea"
+    );
 
     if (!district) {
       return res
@@ -76,11 +141,7 @@ export const getDistrictById = async (req: Request, res: Response) => {
 };
 
 // Update district by ID
-export const updateDistrict = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const updateDistrict = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, annualConference } = req.body;

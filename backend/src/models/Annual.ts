@@ -7,23 +7,29 @@ export interface IAnnual extends Document {
   name: string;
   episcopalArea: "bea" | "dea" | "mea";
   customId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // [SCHEMA]
-const annualSchema = new Schema<IAnnual>({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
+const annualSchema = new Schema<IAnnual>(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    episcopalArea: {
+      type: String,
+      enum: ["bea", "dea", "mea"],
+      required: [true, "Episcopal Area is required"],
+      index: true,
+      trim: true,
+    },
+    customId: { type: String, unique: true },
   },
-  episcopalArea: {
-    type: String,
-    enum: ["bea", "dea", "mea"],
-    required: [true, "Episcopal Area is required"],
-    index: true,
-  },
-  customId: { type: String, unique: true },
-});
+  { timestamps: true }
+);
 
 // [MIDDLEWARE]
 annualSchema.pre("save", async function (next) {
