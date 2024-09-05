@@ -179,7 +179,14 @@ export const createLocalChurch = async (req: Request, res: Response) => {
 export const getLocalChurchById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const localChurch = await Local.findById(id).populate("district", "name");
+    const localChurch = await Local.findById(id).populate({
+      path: "district",
+      select: "_id name annualConference",
+      populate: {
+        path: "annualConference",
+        select: "_id name episcopalArea",
+      },
+    });
 
     if (!localChurch) {
       return res
@@ -210,8 +217,7 @@ export const updateLocalChurch = async (req: Request, res: Response) => {
     if (existingLocalChurch) {
       return res.status(409).json({
         success: false,
-        message:
-          "A local church with this name, district, and annual conference already exists.",
+        message: "A local church with this name and district already exists.",
       });
     }
 
@@ -222,14 +228,6 @@ export const updateLocalChurch = async (req: Request, res: Response) => {
         return res
           .status(400)
           .json({ message: "Invalid District Conference " });
-      }
-    }
-
-    if (annualConference) {
-      const annualCheck = await Annual.findById(annualConference);
-
-      if (!annualCheck) {
-        return res.status(400).json({ message: "Invalid Annual Conference " });
       }
     }
 
