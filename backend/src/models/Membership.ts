@@ -56,7 +56,9 @@ export interface IMembership extends Document {
   birthday: Date;
   age: number;
   contactNo: string;
+  isBaptized: boolean;
   baptism: IBaptismConfirmation;
+  isConfirmed: boolean;
   confirmation: IBaptismConfirmation;
   father?: IFamily;
   mother?: IFamily;
@@ -136,29 +138,13 @@ const membershipSchema = new Schema<IMembership>(
         message: (props) => `${props.value} is not a valid cellphone number`,
       },
     },
+    isBaptized: { type: Boolean, default: false, index: true },
     baptism: {
       type: baptismConfirmationSchema,
-      required: [true, "Baptism information is required"],
-      validate: {
-        validator: function (value: IBaptismConfirmation) {
-          return value.year !== undefined || value.minister !== undefined;
-        },
-        message:
-          "Either year of baptism or officiating minister must be provided.",
-      },
-      index: true,
     },
+    isConfirmed: { type: Boolean, default: false, index: true },
     confirmation: {
       type: baptismConfirmationSchema,
-      required: [true, "Confirmation information is required"],
-      validate: {
-        validator: function (value: IBaptismConfirmation) {
-          return value.year !== undefined || value.minister !== undefined;
-        },
-        message:
-          "Either year of confirmation or officiating minister must be provided.",
-      },
-      index: true,
     },
     father: {
       type: familySchema,
@@ -234,6 +220,22 @@ membershipSchema.pre("save", async function (next) {
     this.organization = Organization.UMCF;
   }
 
+  // Check for baptism and confirmation
+  if (this.baptism && (this.baptism.year || this.baptism.minister)) {
+    this.isBaptized = true;
+  } else {
+    this.isBaptized = false;
+  }
+
+  if (
+    this.confirmation &&
+    (this.confirmation.year || this.confirmation.minister)
+  ) {
+    this.isConfirmed = true;
+  } else {
+    this.isConfirmed = false;
+  }
+
   // Duplicate Check
   const existingMembership = await Membership.findOne({
     name: this.name,
@@ -256,6 +258,8 @@ membershipSchema.index({ membershipClassification: 1 });
 membershipSchema.index({ isActive: 1 });
 membershipSchema.index({ organization: 1 });
 membershipSchema.index({ localChurch: 1 });
+membershipSchema.index({ isBaptized: 1 });
+membershipSchema.index({ isConfirmed: 1 });
 
 //Composite indexes
 membershipSchema.index({ name: 1, district: 1, annualConference: 1 });

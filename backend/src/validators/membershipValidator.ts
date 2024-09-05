@@ -29,13 +29,6 @@ const addressSchema = Joi.object({
 const baptismConfirmationSchema = Joi.object({
   year: Joi.number().optional(),
   minister: Joi.string().optional(),
-}).custom((value, helpers) => {
-  if (!value.year && !value.minister) {
-    return helpers.message({
-      custom: "Either year or minister must be provided.",
-    });
-  }
-  return value;
 });
 
 // Family validation
@@ -84,8 +77,10 @@ export const createMembershipSchema = Joi.object({
       "string.pattern.base":
         "Contact number must be a valid cellphone number starting with 09.",
     }),
-  baptism: baptismConfirmationSchema.required(),
-  confirmation: baptismConfirmationSchema.required(),
+  isBaptized: Joi.boolean().default(false),
+  baptism: baptismConfirmationSchema.optional(),
+  isConfirmed: Joi.boolean().default(false),
+  confirmation: baptismConfirmationSchema.optional(),
   father: familySchema.optional(),
   mother: familySchema.optional(),
   spouse: familySchema.optional(),
@@ -143,6 +138,8 @@ export const updateMembershipSchema = Joi.object({
     .valid("baptized", "professing", "affiliate", "associate", "constituent")
     .optional(),
   isActive: Joi.boolean().optional(),
+  isConfirmed: Joi.boolean().optional(),
+  isBaptized: Joi.boolean().optional(),
   organization: Joi.string()
     .valid("umm", "umwscs", "umyaf", "umyf", "umcf")
     .optional(),

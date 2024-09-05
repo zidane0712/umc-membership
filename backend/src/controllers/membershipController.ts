@@ -1,7 +1,7 @@
 // [IMPORT]
 // Express import
 import { NextFunction, Request, Response } from "express";
-import mongoose from "mongoose";
+import { Types } from "mongoose";
 // Local import
 import { handleError } from "../utils/handleError";
 import Membership from "../models/Membership";
@@ -15,12 +15,190 @@ import Counter from "../models/Counter";
 // Gets all membership
 export const getAllMemberships = async (req: Request, res: Response) => {
   try {
-    const memberships = await Membership.find()
-      .populate("localChurch", "name")
-      .populate("ministries", "name");
+    const {
+      gender,
+      civilStatus,
+      birthMonth,
+      baptized,
+      confirmed,
+      membershipClassification,
+      isActive,
+      localChurch,
+      district,
+      annualConference,
+      episcopalArea,
+      age,
+      organization,
+    } = req.query;
+
+    const birthMonthInt =
+      typeof birthMonth === "string" ? parseInt(birthMonth, 10) : undefined;
+    const minAge =
+      typeof req.query.minAge === "string"
+        ? parseInt(req.query.minAge, 10)
+        : undefined;
+    const maxAge =
+      typeof req.query.maxAge === "string"
+        ? parseInt(req.query.maxAge, 10)
+        : undefined;
+    const currentYear = new Date().getFullYear();
+
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: "locals",
+          localField: "localChurch",
+          foreignField: "_id",
+          as: "localChurch",
+        },
+      },
+      {
+        $unwind: "$localChurch",
+      },
+      {
+        $lookup: {
+          from: "districts",
+          localField: "localChurch.district",
+          foreignField: "_id",
+          as: "localChurch.district",
+        },
+      },
+      {
+        $unwind: "$localChurch.district",
+      },
+      {
+        $lookup: {
+          from: "annuals",
+          localField: "localChurch.district.annualConference",
+          foreignField: "_id",
+          as: "localChurch.district.annualConference",
+        },
+      },
+      {
+        $unwind: "$localChurch.district.annualConference",
+      },
+      {
+        $project: {
+          name: 1,
+          gender: 1,
+          civilStatus: 1,
+          birthMonth: 1,
+          baptized: 1,
+          confirmed: 1,
+          membershipClassification: 1,
+          isActive: 1,
+          localChurch: {
+            _id: 1,
+            name: 1,
+            district: {
+              _id: 1,
+              name: 1,
+              annualConference: {
+                _id: 1,
+                name: 1,
+                episcopalArea: 1,
+              },
+            },
+          },
+          age: 1,
+          organization: 1,
+        },
+      },
+    ];
+
+    if (gender) {
+      pipeline.push({ $match: { gender } });
+    }
+
+    if (civilStatus) {
+      pipeline.push({ $match: { civilStatus } });
+    }
+
+    if (birthMonthInt !== undefined) {
+      pipeline.push({
+        $match: {
+          $expr: {
+            $eq: [{ $month: "$birthDate" }, birthMonthInt],
+          },
+        },
+      });
+    }
+
+    if (baptized) {
+      pipeline.push({ $match: { "baptized.year": { $exists: true } } });
+    }
+
+    if (confirmed) {
+      pipeline.push({ $match: { "confirmed.year": { $exists: true } } });
+    }
+
+    if (membershipClassification) {
+      pipeline.push({ $match: { membershipClassification } });
+    }
+
+    if (isActive !== undefined) {
+      pipeline.push({ $match: { isActive } });
+    }
+
+    if (localChurch) {
+      pipeline.push({
+        $match: {
+          "localChurch._id": new Types.ObjectId(localChurch as string),
+        },
+      });
+    }
+
+    if (district) {
+      pipeline.push({
+        $match: {
+          "localChurch.district._id": new Types.ObjectId(district as string),
+        },
+      });
+    }
+
+    if (annualConference) {
+      pipeline.push({
+        $match: {
+          "localChurch.district.annualConference._id": new Types.ObjectId(
+            annualConference as string
+          ),
+        },
+      });
+    }
+
+    if (episcopalArea) {
+      pipeline.push({
+        $match: {
+          "localChurch.district.annualConference.episcopalArea": episcopalArea,
+        },
+      });
+    }
+
+    if (age !== undefined) {
+      const minBirthYear = currentYear - (maxAge || 0);
+      const maxBirthYear = currentYear - (minAge || 0);
+
+      pipeline.push({
+        $match: {
+          $expr: {
+            $and: [
+              { $gte: [{ $year: "$birthDate" }, minBirthYear] },
+              { $lte: [{ $year: "$birthDate" }, maxBirthYear] },
+            ],
+          },
+        },
+      });
+    }
+
+    if (organization) {
+      pipeline.push({ $match: { organization } });
+    }
+
+    const memberships = await Membership.aggregate(pipeline);
+
     res.status(200).json({ success: true, data: memberships });
   } catch (err) {
-    handleError(res, err, "An error occurred while getting all member");
+    handleError(res, err, "An error occurred while getting all memberships");
   }
 };
 
@@ -43,7 +221,7 @@ export const createMembership = async (req: Request, res: Response) => {
 
     // Get the next sequence number from a counter collection
     const counter = await Counter.findOneAndUpdate(
-      { _id: "membershipshipId" },
+      { _id: "membershipId" },
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
@@ -66,9 +244,18 @@ export const getMemberById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const member = await Membership.findById(id)
-      .populate("annualConference", "name")
-      .populate("district", "name")
-      .populate("localChurch", "name")
+      .populate({
+        path: "localChurch",
+        select: "_id name district",
+        populate: {
+          path: "district",
+          select: "_id name annualConference",
+          populate: {
+            path: "annualConference",
+            select: "_id name episcopalArea",
+          },
+        },
+      })
       .populate("ministries", "name");
 
     if (!member) {
@@ -174,8 +361,7 @@ export const deleteMember = async (req: Request, res: Response) => {
 export const addMinistriesToMember = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { ministryIds }: { ministryIds: mongoose.Types.ObjectId[] } =
-      req.body;
+    const { ministryIds }: { ministryIds: Types.ObjectId[] } = req.body;
 
     // Find the member by ID
     const member = await Membership.findById(id);
@@ -220,10 +406,10 @@ export const addMinistriesToMember = async (req: Request, res: Response) => {
       ministry.members = ministry.members || [];
       if (
         !ministry.members.some((memberId) =>
-          memberId.equals(member._id as mongoose.Types.ObjectId)
+          memberId.equals(member._id as Types.ObjectId)
         )
       ) {
-        ministry.members.push(member._id as mongoose.Types.ObjectId);
+        ministry.members.push(member._id as Types.ObjectId);
         await ministry.save();
       }
     });
