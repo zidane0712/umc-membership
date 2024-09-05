@@ -1,7 +1,7 @@
 // [IMPORTS]
 import { Request, Response, NextFunction } from "express";
 import Joi from "joi";
-import mongoose from "mongoose";
+import { Types } from "mongoose";
 
 // [FUNCTION]
 export const validate = (schema: Joi.ObjectSchema) => {
@@ -20,7 +20,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
     const { annualConference } = req.body;
     if (annualConference && typeof annualConference === "string") {
       req.body.annualConference = annualConference.trim(); // Trim spaces
-      if (!mongoose.Types.ObjectId.isValid(req.body.annualConference)) {
+      if (!Types.ObjectId.isValid(req.body.annualConference)) {
         return res.status(400).json({
           success: false,
           message: "Invalid Annual Conference ID format.",
@@ -32,10 +32,22 @@ export const validate = (schema: Joi.ObjectSchema) => {
     const { district } = req.body;
     if (district && typeof district === "string") {
       req.body.district = district.trim(); // Trim spaces
-      if (!mongoose.Types.ObjectId.isValid(req.body.district)) {
+      if (!Types.ObjectId.isValid(req.body.district)) {
         return res.status(400).json({
           success: false,
           message: "Invalid District Conference ID format.",
+        });
+      }
+    }
+
+    // Perform ObjectId validation for the "localChurch" field
+    const { localChurch } = req.body;
+    if (localChurch && typeof localChurch === "string") {
+      req.body.localChurch = localChurch.trim(); // Trim spaces
+      if (!Types.ObjectId.isValid(req.body.localChurch)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Local Church ID format.",
         });
       }
     }

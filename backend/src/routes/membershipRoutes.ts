@@ -16,8 +16,6 @@ import {
 } from "../controllers/membershipController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
-import { validateAnnualConference } from "../middleware/validateAnnualConference";
-import { validateDistrictConference } from "../middleware/validateDistrictConference";
 import { validateLocalChurch } from "../middleware/validateLocalChurch";
 import { validate } from "../middleware/validate";
 
@@ -30,8 +28,6 @@ router
   .get(asyncHandler(getAllMemberships))
   .post(
     validate(createMembershipSchema),
-    validateAnnualConference,
-    validateDistrictConference,
     validateLocalChurch,
     asyncHandler(createMembership)
   );
@@ -41,8 +37,6 @@ router
   .get(asyncHandler(getMemberById))
   .put(
     validate(updateMembershipSchema),
-    validateAnnualConference,
-    validateDistrictConference,
     validateLocalChurch,
     asyncHandler(updateMember)
   )

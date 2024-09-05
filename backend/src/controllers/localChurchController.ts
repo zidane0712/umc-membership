@@ -145,7 +145,6 @@ export const createLocalChurch = async (req: Request, res: Response) => {
     const existingLocalChurch = await Local.findOne({
       name,
       district,
-      // annualConference,
     });
 
     if (existingLocalChurch) {
@@ -289,18 +288,10 @@ export const getAnniversariesByMonth = async (req: Request, res: Response) => {
       });
     }
 
-    const monthInt = parseInt(monthStr, 10); // Convert to integer for comparison
+    const monthInt = parseInt(monthStr, 10);
 
     // Build the aggregation pipeline
     const pipeline: any[] = [
-      {
-        $project: {
-          name: 1,
-          customId: 1,
-          district: 1,
-          anniversaryDate: 1,
-        },
-      },
       {
         $match: {
           $expr: {
@@ -309,7 +300,33 @@ export const getAnniversariesByMonth = async (req: Request, res: Response) => {
         },
       },
       {
-        $sort: { name: 1 }, // Optional sorting by name
+        $lookup: {
+          from: "districts",
+          localField: "district",
+          foreignField: "_id",
+          as: "district",
+        },
+      },
+      {
+        $unwind: "$district",
+      },
+      {
+        $project: {
+          name: 1,
+          customId: 1,
+          address: 1,
+          district: {
+            _id: 1,
+            name: 1,
+          },
+          contactNo: 1,
+          anniversaryDate: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+      {
+        $sort: { name: 1 },
       },
     ];
 

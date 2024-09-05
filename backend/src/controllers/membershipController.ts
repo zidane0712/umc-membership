@@ -9,14 +9,13 @@ import Annual from "../models/Annual";
 import District from "../models/District";
 import Local from "../models/Local";
 import Ministry from "../models/Ministries";
+import Counter from "../models/Counter";
 
 // [CONTROLLERS]
 // Gets all membership
 export const getAllMemberships = async (req: Request, res: Response) => {
   try {
     const memberships = await Membership.find()
-      .populate("annualConference", "name")
-      .populate("district", "name")
       .populate("localChurch", "name")
       .populate("ministries", "name");
     res.status(200).json({ success: true, data: memberships });
@@ -33,21 +32,29 @@ export const createMembership = async (req: Request, res: Response) => {
     // Check if a membership already exists with the same name, district, and local church
     const existingMembership = await Membership.findOne({
       name,
-      district,
-      localChurch,
     });
 
     if (existingMembership) {
       return res.status(409).json({
         success: false,
-        message:
-          "A membership with this name, district, and local church already exists.",
+        message: "A membership with this name already exists.",
       });
     }
 
+    // Get the next sequence number from a counter collection
+    const counter = await Counter.findOneAndUpdate(
+      { _id: "membershipshipId" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    // Generate custom Id
+    const customId = `UMC-${counter?.seq.toString().padStart(5, "0")}`;
+
     // If it doesn't exist, create a new membership
-    const membership = new Membership(req.body);
+    const membership = new Membership({ ...req.body, customId });
     const newMembership = await membership.save();
+
     res.status(201).json(newMembership);
   } catch (err) {
     handleError(res, err, "An error occurred while creating member");
