@@ -267,3 +267,64 @@ export const deleteLocalChurch = async (req: Request, res: Response) => {
     handleError(res, err, "An error occurred while deleting local church");
   }
 };
+
+// Get local church by anniversary month
+export const getAnniversariesByMonth = async (req: Request, res: Response) => {
+  try {
+    const { month } = req.query;
+
+    // Ensure month is a valid string and between 01 and 12
+    const monthStr = typeof month === "string" ? month : undefined;
+
+    if (
+      !monthStr ||
+      !/^\d{2}$/.test(monthStr) ||
+      parseInt(monthStr, 10) < 1 ||
+      parseInt(monthStr, 10) > 12
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please provide a valid two-digit month between '01' and '12'.",
+      });
+    }
+
+    const monthInt = parseInt(monthStr, 10); // Convert to integer for comparison
+
+    // Build the aggregation pipeline
+    const pipeline: any[] = [
+      {
+        $project: {
+          name: 1,
+          customId: 1,
+          district: 1,
+          anniversaryDate: 1,
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $eq: [{ $month: "$anniversaryDate" }, monthInt],
+          },
+        },
+      },
+      {
+        $sort: { name: 1 }, // Optional sorting by name
+      },
+    ];
+
+    // Fetch local churches with anniversary in the specified month
+    const localChurches = await Local.aggregate(pipeline);
+
+    res.status(200).json({
+      success: true,
+      data: localChurches,
+    });
+  } catch (err) {
+    handleError(
+      res,
+      err,
+      "An error occurred while fetching local churches with anniversaries."
+    );
+  }
+};

@@ -12,6 +12,7 @@ import {
   getLocalChurchById,
   updateLocalChurch,
   deleteLocalChurch,
+  getAnniversariesByMonth,
 } from "../controllers/localChurchController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
@@ -31,6 +32,8 @@ router
     validateAnnualConference,
     asyncHandler(createLocalChurch)
   );
+
+router.route("/anniversaries").get(asyncHandler(getAnniversariesByMonth));
 
 router
   .route("/:id")
