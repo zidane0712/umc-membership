@@ -29,6 +29,7 @@ export const getAllMemberships = async (req: Request, res: Response) => {
       episcopalArea,
       age,
       organization,
+      search,
     } = req.query;
 
     const birthMonthInt =
@@ -80,11 +81,24 @@ export const getAllMemberships = async (req: Request, res: Response) => {
       {
         $project: {
           name: 1,
+          address: 1,
           gender: 1,
           civilStatus: 1,
+          birthday: 1,
+          contactNo: 1,
+          isBaptized: 1,
+          isConfirmed: 1,
           birthMonth: 1,
           baptized: 1,
+          baptism: 1,
           confirmed: 1,
+          confirmation: 1,
+          father: 1,
+          mother: 1,
+          children: 1,
+          customId: 1,
+          createdAt: 1,
+          updatedAt: 1,
           membershipClassification: 1,
           isActive: 1,
           localChurch: {
@@ -118,18 +132,26 @@ export const getAllMemberships = async (req: Request, res: Response) => {
       pipeline.push({
         $match: {
           $expr: {
-            $eq: [{ $month: "$birthDate" }, birthMonthInt],
+            $eq: [{ $month: "$birthday" }, birthMonthInt],
           },
         },
       });
     }
 
-    if (baptized) {
-      pipeline.push({ $match: { "baptized.year": { $exists: true } } });
+    if (baptized !== undefined) {
+      pipeline.push({
+        $match: {
+          isBaptized: baptized === "true",
+        },
+      });
     }
 
-    if (confirmed) {
-      pipeline.push({ $match: { "confirmed.year": { $exists: true } } });
+    if (confirmed !== undefined) {
+      pipeline.push({
+        $match: {
+          isConfirmed: confirmed === "true",
+        },
+      });
     }
 
     if (membershipClassification) {
@@ -137,7 +159,9 @@ export const getAllMemberships = async (req: Request, res: Response) => {
     }
 
     if (isActive !== undefined) {
-      pipeline.push({ $match: { isActive } });
+      const activeStatus = isActive === "true";
+
+      pipeline.push({ $match: { isActive: activeStatus } });
     }
 
     if (localChurch) {
@@ -175,23 +199,31 @@ export const getAllMemberships = async (req: Request, res: Response) => {
     }
 
     if (age !== undefined) {
-      const minBirthYear = currentYear - (maxAge || 0);
-      const maxBirthYear = currentYear - (minAge || 0);
+      const parsedAge = parseInt(age as string, 10);
 
       pipeline.push({
         $match: {
-          $expr: {
-            $and: [
-              { $gte: [{ $year: "$birthDate" }, minBirthYear] },
-              { $lte: [{ $year: "$birthDate" }, maxBirthYear] },
-            ],
-          },
+          age: parsedAge,
         },
       });
     }
 
     if (organization) {
       pipeline.push({ $match: { organization } });
+    }
+
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { "name.firstname": { $regex: search, $options: "i" } },
+            { "name.lastname": { $regex: search, $options: "i" } },
+            { customId: { $regex: search, $options: "i" } },
+            { "address.permanent.barangay": { $regex: search, $options: "i" } },
+            { "address.current.barangay": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
     }
 
     const memberships = await Membership.aggregate(pipeline);
@@ -278,7 +310,14 @@ export const updateMember = async (
 ) => {
   try {
     const { id } = req.params;
-    const { name, localChurch, district, annualConference } = req.body;
+    const {
+      name,
+      localChurch,
+      district,
+      annualConference,
+      baptism,
+      confirmation,
+    } = req.body;
 
     // Check if there's another membership with same name, district, and annual conference
     const existingMembership = await Membership.findOne({
@@ -322,6 +361,23 @@ export const updateMember = async (
           .status(400)
           .json({ message: "Invalid Local Church reference." });
       }
+    }
+
+    // Automatically set isBaptized to true if baptism info is provided
+    if (baptism && (baptism.year || baptism.officiatingMinister)) {
+      req.body.isBaptized = true;
+    } else {
+      req.body.isBaptized = false;
+    }
+
+    // Automatically set isConfirmed to true if confirmation info is provided
+    if (
+      confirmation &&
+      (confirmation.year || confirmation.officiatingMinister)
+    ) {
+      req.body.isConfirmed = true;
+    } else {
+      req.body.isConfirmed = false;
     }
 
     const updateMembership = await Membership.findByIdAndUpdate(id, req.body, {
