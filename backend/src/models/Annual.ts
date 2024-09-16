@@ -1,6 +1,7 @@
 // [IMPORTS]
 // Mongoose imports
 import { Document, Schema, model } from "mongoose";
+import Log from "./Logs";
 
 // [INTERFACE]
 export interface IAnnual extends Document {
@@ -45,6 +46,38 @@ annualSchema.pre("save", async function (next) {
     next(error);
   } else {
     next();
+  }
+});
+
+annualSchema.post("save", async function (doc) {
+  await Log.create({
+    action: "created",
+    collection: "Annual",
+    documentId: doc._id,
+    data: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+annualSchema.post("findOneAndUpdate", async function (doc) {
+  await Log.create({
+    action: "updated",
+    collection: "Annual",
+    documentId: doc._id,
+    newData: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+annualSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    await Log.create({
+      action: "deleted",
+      collection: "Annual",
+      documentId: doc._id,
+      data: doc.toObject(),
+      timestamp: new Date(),
+    });
   }
 });
 

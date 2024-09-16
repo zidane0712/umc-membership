@@ -1,6 +1,7 @@
 // [IMPORTS]
 // Mongoose imports
 import { Document, Schema, model, Types } from "mongoose";
+import Log from "./Logs";
 
 // [INTERFACE]
 export interface IDistrict extends Document {
@@ -45,6 +46,38 @@ districtSchema.pre("save", async function (next) {
     next(error);
   } else {
     next();
+  }
+});
+
+districtSchema.post("save", async function (doc) {
+  await Log.create({
+    action: "created",
+    collection: "District",
+    documentId: doc._id,
+    data: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+districtSchema.post("findOneAndUpdate", async function (doc) {
+  await Log.create({
+    action: "updated",
+    collection: "District",
+    documentId: doc._id,
+    newData: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+districtSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    await Log.create({
+      action: "deleted",
+      collection: "District",
+      documentId: doc._id,
+      data: doc.toObject(),
+      timestamp: new Date(),
+    });
   }
 });
 

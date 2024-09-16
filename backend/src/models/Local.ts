@@ -5,6 +5,7 @@ import { Document, Schema, Types, model } from "mongoose";
 // Local imports
 import { IAddress } from "../interfaces/common";
 import { addressSchema } from "../schemas/commonSchemas";
+import Log from "./Logs";
 
 // [INTERFACE]
 export interface ILocal extends Document {
@@ -68,6 +69,38 @@ localSchema.pre("save", async function (next) {
     next(error);
   } else {
     next();
+  }
+});
+
+localSchema.post("save", async function (doc) {
+  await Log.create({
+    action: "created",
+    collection: "Local",
+    documentId: doc._id,
+    data: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+localSchema.post("findOneAndUpdate", async function (doc) {
+  await Log.create({
+    action: "updated",
+    collection: "Local",
+    documentId: doc._id,
+    newData: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+localSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    await Log.create({
+      action: "deleted",
+      collection: "Local",
+      documentId: doc._id,
+      data: doc.toObject(),
+      timestamp: new Date(),
+    });
   }
 });
 

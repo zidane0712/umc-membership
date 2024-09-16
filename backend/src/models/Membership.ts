@@ -9,6 +9,7 @@ import {
   baptismConfirmationSchema,
   familySchema,
 } from "../schemas/commonSchemas";
+import Log from "./Logs";
 
 // [ENUM]
 enum Gender {
@@ -243,9 +244,42 @@ membershipSchema.pre("save", async function (next) {
 
   if (existingMembership) {
     const error = new Error("A membership with this name already exists.");
+    return next(error);
   }
 
   next();
+});
+
+membershipSchema.post("save", async function (doc) {
+  await Log.create({
+    action: "created",
+    collection: "Membership",
+    documentId: doc._id,
+    data: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+membershipSchema.post("findOneAndUpdate", async function (doc) {
+  await Log.create({
+    action: "updated",
+    collection: "Membership",
+    documentId: doc._id,
+    newData: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+membershipSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    await Log.create({
+      action: "deleted",
+      collection: "Membership",
+      documentId: doc._id,
+      data: doc.toObject(),
+      timestamp: new Date(),
+    });
+  }
 });
 
 // [INDEX]

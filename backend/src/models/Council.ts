@@ -1,6 +1,7 @@
 // [IMPORTS]
 // Mongoose imports
 import { Document, Schema, Types, model } from "mongoose";
+import Log from "./Logs";
 
 // [INTERFACE]
 export interface IAdministrativeOffice {
@@ -333,6 +334,39 @@ const councilSchema = new Schema<ICouncil>({
     type: financeSchema,
     required: [true, "Finance is required"],
   },
+});
+
+// [MIDDLEWARE]
+councilSchema.post("save", async function (doc) {
+  await Log.create({
+    action: "created",
+    collection: "District",
+    documentId: doc._id,
+    data: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+councilSchema.post("findOneAndUpdate", async function (doc) {
+  await Log.create({
+    action: "updated",
+    collection: "District",
+    documentId: doc._id,
+    newData: doc.toObject(),
+    timestamp: new Date(),
+  });
+});
+
+councilSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    await Log.create({
+      action: "deleted",
+      collection: "District",
+      documentId: doc._id,
+      data: doc.toObject(),
+      timestamp: new Date(),
+    });
+  }
 });
 
 // [EXPORT]
