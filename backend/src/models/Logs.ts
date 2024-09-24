@@ -11,8 +11,8 @@ const logSchema = new Schema({
   },
   collection: { type: String, required: true },
   documentId: { type: mongoose.Types.ObjectId, required: true },
-  data: { type: Schema.Types.Mixed }, // Can store original or updated data
-  performedBy: { type: mongoose.Types.ObjectId, ref: "User" }, // Optional
+  data: { type: Schema.Types.Mixed },
+  performedBy: { type: mongoose.Types.ObjectId, ref: "User" },
   timestamp: { type: Date, default: Date.now },
 });
 

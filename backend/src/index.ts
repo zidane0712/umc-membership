@@ -14,6 +14,7 @@ import districtRoutes from "./routes/districtRoutes";
 import localChurchRoutes from "./routes/localChurchRoutes";
 import ministryRoutes from "./routes/ministriesRoutes";
 import councilRoutes from "./routes/councilRoutes";
+import logRoutes from "./routes/logRoutes";
 
 // [APP CONFIGURATION]
 const app: Application = express();
@@ -40,6 +41,7 @@ app.use("/district", districtRoutes);
 app.use("/localChurch", localChurchRoutes);
 app.use("/ministry", ministryRoutes);
 app.use("/council", councilRoutes);
+app.use("/logs", logRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
