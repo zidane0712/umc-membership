@@ -247,7 +247,7 @@ export const createMembership = async (req: Request, res: Response) => {
     if (existingMembership) {
       return res.status(409).json({
         success: false,
-        message: "A membership with this name already exists.",
+        message: "Aaaaaa",
       });
     }
 

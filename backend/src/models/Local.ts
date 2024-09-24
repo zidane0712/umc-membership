@@ -1,7 +1,6 @@
 // [IMPORTS]
 // Mongoose imports
 import { Document, Schema, Types, model } from "mongoose";
-
 // Local imports
 import { IAddress } from "../interfaces/common";
 import { addressSchema } from "../schemas/commonSchemas";

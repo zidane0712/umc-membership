@@ -7,6 +7,7 @@ import Local from "../models/Local";
 import Membership from "../models/Membership";
 import Ministry from "../models/Ministries";
 import { handleError } from "../utils/handleError";
+import Counter from "../models/Counter";
 
 // [CONTROLLERS]
 
@@ -24,9 +25,37 @@ export const getAllMinistry = async (req: Request, res: Response) => {
 
 // Create a new ministry
 export const createMinistry = async (req: Request, res: Response) => {
-  const ministry = new Ministry(req.body);
+  const { name, localChurch } = req.body;
+
   try {
+    // Manually check if ministry exists in the local church
+    const existingMinistry = await Ministry.findOne({
+      name,
+      localChurch,
+    });
+
+    if (existingMinistry) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A ministry with this name in the local church already exists.",
+      });
+    }
+
+    // Get the next sequence number from a counter collection
+    const counter = await Counter.findOneAndUpdate(
+      { _id: "ministryId" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    // Generate custom id
+    const customId = `MLC-${counter?.seq.toString().padStart(4, "0")}`;
+
+    // If it doesn't exist, create a new one
+    const ministry = new Ministry({ ...req.body, customId });
     const newMinistry = await ministry.save();
+
     res.status(201).json(newMinistry);
   } catch (err) {
     handleError(res, err, "An error occurred while creating ministry");

@@ -238,13 +238,16 @@ membershipSchema.pre("save", async function (next) {
   }
 
   // Duplicate Check
-  const existingMembership = await Membership.findOne({
-    name: this.name,
-  });
+  if (this.isNew || this.isModified("name")) {
+    const existingMembership = await Membership.findOne({
+      name: this.name,
+      _id: { $ne: this._id },
+    });
 
-  if (existingMembership) {
-    const error = new Error("A membership with this name already exists.");
-    return next(error);
+    if (existingMembership) {
+      const error = new Error("A membership with this name already exists.");
+      return next(error);
+    }
   }
 
   next();
