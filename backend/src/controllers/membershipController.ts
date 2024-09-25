@@ -79,6 +79,14 @@ export const getAllMemberships = async (req: Request, res: Response) => {
         $unwind: "$localChurch.district.annualConference",
       },
       {
+        $lookup: {
+          from: "ministries",
+          localField: "ministries",
+          foreignField: "_id",
+          as: "ministries",
+        },
+      },
+      {
         $project: {
           name: 1,
           address: 1,
@@ -116,6 +124,10 @@ export const getAllMemberships = async (req: Request, res: Response) => {
           },
           age: 1,
           organization: 1,
+          ministries: {
+            _id: 1,
+            name: 1,
+          },
         },
       },
     ];

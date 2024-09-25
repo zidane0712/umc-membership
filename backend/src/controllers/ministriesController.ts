@@ -14,12 +14,30 @@ import Counter from "../models/Counter";
 // Gets all ministries
 export const getAllMinistry = async (req: Request, res: Response) => {
   try {
-    const ministries = await Ministry.find()
+    // Extract query parameters from the request
+    const { name, localChurch } = req.query;
+
+    // Create a filter object to hold the query conditions
+    const filter: any = {};
+
+    // If 'name' is provided, use a case-insensitive regular expression for searching
+    if (name) {
+      filter.name = { $regex: new RegExp(name as string, "i") };
+    }
+
+    // If 'localChurch' is provided, add it to the filter
+    if (localChurch) {
+      filter.localChurch = localChurch;
+    }
+
+    // Find ministries based on the filter and populate related fields
+    const ministries = await Ministry.find(filter)
       .populate("localChurch", "name")
       .populate("members", "name");
+
     res.status(200).json({ success: true, data: ministries });
   } catch (err) {
-    handleError(res, err, "An error occurred while getting all ministry");
+    handleError(res, err, "An error occurred while getting all ministries");
   }
 };
 
