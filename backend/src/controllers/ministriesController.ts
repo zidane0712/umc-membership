@@ -104,18 +104,31 @@ export const getMinistryById = async (req: Request, res: Response) => {
 export const updateMinistry = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { name, localChurch } = req.body;
 
-    if (updateData.local) {
-      const localChurch = await Local.findById(updateData.localChurch);
-      if (!localChurch) {
+    const existingMinistry = await Ministry.findOne({
+      name,
+      localChurch,
+      _id: { $ne: id },
+    });
+
+    if (existingMinistry) {
+      return res.status(409).json({
+        success: false,
+        message: "A ministry with this name in the local church already exists",
+      });
+    }
+
+    if (localChurch) {
+      const localChurchCheck = await Local.findById(localChurch);
+      if (!localChurchCheck) {
         return res
           .status(400)
           .json({ message: "Invalid Local Church reference." });
       }
     }
 
-    const updateMinistry = await Ministry.findByIdAndUpdate(id, updateData, {
+    const updateMinistry = await Ministry.findByIdAndUpdate(id, req.body, {
       new: true,
     });
 
