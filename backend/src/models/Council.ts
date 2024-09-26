@@ -73,6 +73,9 @@ export interface ICouncil extends Document {
   churchHistorian: IChurchHistorian;
   communications: ICommunication;
   finance: IFinance;
+  customId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // [SCHEMA]
@@ -297,50 +300,54 @@ const financeSchema = new Schema<IFinance>(
   }
 );
 
-const councilSchema = new Schema<ICouncil>({
-  startYear: { type: Date, required: true },
-  endYear: { type: Date, required: true },
-  localChurch: {
-    type: Schema.Types.ObjectId,
-    ref: "Local",
-    required: [true, "Local Church is required"],
-    index: true,
+const councilSchema = new Schema<ICouncil>(
+  {
+    startYear: { type: Date, required: true },
+    endYear: { type: Date, required: true },
+    localChurch: {
+      type: Schema.Types.ObjectId,
+      ref: "Local",
+      required: [true, "Local Church is required"],
+      index: true,
+    },
+    administrativeOffice: {
+      type: administrativeOfficeSchema,
+      required: [true, "Administrative Office is required"],
+    },
+    nurture: {
+      type: nurtureSchema,
+      required: [true, "Nurture is required"],
+    },
+    outreach: {
+      type: outreachSchema,
+      required: [true, "Outreach is required"],
+    },
+    witness: {
+      type: witnessSchema,
+      required: [true, "Witness is required"],
+    },
+    churchHistorian: {
+      type: churchHistorianSchema,
+      required: [true, "Church Historian is required"],
+    },
+    communications: {
+      type: communicationsSchema,
+      required: [true, "Communications is required"],
+    },
+    finance: {
+      type: financeSchema,
+      required: [true, "Finance is required"],
+    },
+    customId: { type: String, unique: true },
   },
-  administrativeOffice: {
-    type: administrativeOfficeSchema,
-    required: [true, "Administrative Office is required"],
-  },
-  nurture: {
-    type: nurtureSchema,
-    required: [true, "Nurture is required"],
-  },
-  outreach: {
-    type: outreachSchema,
-    required: [true, "Outreach is required"],
-  },
-  witness: {
-    type: witnessSchema,
-    required: [true, "Witness is required"],
-  },
-  churchHistorian: {
-    type: churchHistorianSchema,
-    required: [true, "Church Historian is required"],
-  },
-  communications: {
-    type: communicationsSchema,
-    required: [true, "Communications is required"],
-  },
-  finance: {
-    type: financeSchema,
-    required: [true, "Finance is required"],
-  },
-});
+  { timestamps: true }
+);
 
 // [MIDDLEWARE]
 councilSchema.post("save", async function (doc) {
   await Log.create({
     action: "created",
-    collection: "District",
+    collection: "Council",
     documentId: doc._id,
     data: doc.toObject(),
     timestamp: new Date(),
@@ -350,7 +357,7 @@ councilSchema.post("save", async function (doc) {
 councilSchema.post("findOneAndUpdate", async function (doc) {
   await Log.create({
     action: "updated",
-    collection: "District",
+    collection: "Council",
     documentId: doc._id,
     newData: doc.toObject(),
     timestamp: new Date(),
@@ -361,7 +368,7 @@ councilSchema.post("findOneAndDelete", async function (doc) {
   if (doc) {
     await Log.create({
       action: "deleted",
-      collection: "District",
+      collection: "Council",
       documentId: doc._id,
       data: doc.toObject(),
       timestamp: new Date(),
