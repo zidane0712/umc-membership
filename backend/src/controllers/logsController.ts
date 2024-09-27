@@ -10,7 +10,7 @@ import { handleError } from "../utils/handleError";
 // Get all logs
 export const getAllLogs = async (req: Request, res: Response) => {
   try {
-    const { action, collection } = req.query;
+    const { action, collection, documentId } = req.query;
 
     const pipeline: any[] = [];
 
@@ -28,6 +28,15 @@ export const getAllLogs = async (req: Request, res: Response) => {
       pipeline.push({
         $match: {
           collection: collection,
+        },
+      });
+    }
+
+    // If documentId is provided, add it to the match stage
+    if (documentId) {
+      pipeline.push({
+        $match: {
+          documentId: new mongoose.Types.ObjectId(documentId as string),
         },
       });
     }
