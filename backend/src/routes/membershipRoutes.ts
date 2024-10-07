@@ -13,6 +13,7 @@ import {
   updateMember,
   deleteMember,
   addMinistriesToMember,
+  removeMinistriesFromMember,
 } from "../controllers/membershipController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
@@ -42,7 +43,10 @@ router
   )
   .delete(asyncHandler(deleteMember));
 
-router.route("/:id/add-ministry").put(asyncHandler(addMinistriesToMember));
+router
+  .route("/:id/ministry")
+  .put(asyncHandler(addMinistriesToMember))
+  .delete(asyncHandler(removeMinistriesFromMember));
 
 router.use(errorHandler);
 

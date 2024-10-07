@@ -506,3 +506,78 @@ export const addMinistriesToMember = async (req: Request, res: Response) => {
     );
   }
 };
+
+// Remove multiple ministries from a member
+export const removeMinistriesFromMember = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { ministryIds }: { ministryIds: Types.ObjectId[] } = req.body;
+
+    // Find the member by ID
+    const member = await Membership.findById(id);
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    // Initialize ministries array if undefined
+    const updatedMinistries = member.ministries || [];
+
+    // Filter for valid ministryIds that are currently in the member's ministries
+    const ministriesToRemove = ministryIds.filter((ministryId) =>
+      updatedMinistries.includes(ministryId)
+    );
+
+    if (ministriesToRemove.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No matching ministries found for the member" });
+    }
+
+    // Use findOneAndUpdate to update the ministries by pulling the ones to remove
+    const updatedMember = await Membership.findOneAndUpdate(
+      { _id: id },
+      { $pull: { ministries: { $in: ministriesToRemove } } }, // Remove ministries
+      { new: true } // Return the updated document
+    );
+
+    if (updatedMember) {
+      // Remove the member from each ministry's members array
+      const updates = ministriesToRemove.map(async (ministryId) => {
+        const ministry = await Ministry.findById(ministryId);
+        if (ministry) {
+          ministry.members = ministry.members || [];
+          if (
+            ministry.members.some((memberId) =>
+              memberId.equals(updatedMember._id as Types.ObjectId)
+            )
+          ) {
+            ministry.members = ministry.members.filter(
+              (memberId) =>
+                !memberId.equals(updatedMember._id as Types.ObjectId)
+            );
+            await ministry.save();
+          }
+        }
+      });
+      await Promise.all(updates);
+
+      res.status(200).json({
+        success: true,
+        message: "Ministries successfully removed from member",
+      });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Failed to update ministries for member" });
+    }
+  } catch (err) {
+    handleError(
+      res,
+      err,
+      "An error occurred while removing ministries from the member"
+    );
+  }
+};

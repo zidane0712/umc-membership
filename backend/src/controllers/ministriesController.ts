@@ -229,3 +229,62 @@ export const addMemberToMinistry = async (req: Request, res: Response) => {
     );
   }
 };
+
+// Remove members from a ministry
+export const removeMembersFromMinistry = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { memberIds }: { memberIds: mongoose.Types.ObjectId[] } = req.body;
+
+    // Find the ministry by Id and initialize the members array if undefined
+    const ministry = await Ministry.findById(id);
+    if (!ministry) {
+      return res.status(404).json({ message: "Ministry not found" });
+    }
+
+    ministry.members = ministry.members || []; // Ensure members array is initialized
+
+    // Filter for valid memberIds that are currently in the ministry
+    const membersToRemove = memberIds.filter((memberId) =>
+      ministry.members!.includes(memberId)
+    );
+
+    if (membersToRemove.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No matching members found in the ministry" });
+    }
+
+    // Update the Ministry using findOneAndUpdate to remove the members
+    await Ministry.findOneAndUpdate(
+      { _id: id },
+      { $pull: { members: { $in: membersToRemove } } },
+      { new: true } // Return the updated document
+    );
+
+    // Update each member to remove the ministry reference
+    const updates = membersToRemove.map(async (memberId) => {
+      await Membership.findOneAndUpdate(
+        { _id: memberId },
+        { $pull: { ministries: ministry._id } },
+        { new: true } // Return the updated document
+      );
+    });
+
+    await Promise.all(updates);
+
+    res.status(200).json({
+      success: true,
+      message: "Members successfully removed from Ministry",
+    });
+  } catch (err) {
+    handleError(
+      res,
+      err,
+      "An error occurred while removing members from the ministry"
+    );
+  }
+};
