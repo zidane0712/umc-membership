@@ -168,19 +168,16 @@ export const addMemberToMinistry = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { memberIds }: { memberIds: mongoose.Types.ObjectId[] } = req.body;
 
-    // Find the ministry by Id
+    // Find the ministry by Id and initialize the members array if undefined
     const ministry = await Ministry.findById(id);
     if (!ministry) {
       return res.status(404).json({ message: "Ministry not found" });
     }
 
-    // Initialize members array if undefined
     ministry.members = ministry.members || [];
 
     // Find the members by Ids
     const members = await Membership.find({ _id: { $in: memberIds } });
-    const memberIdsSet = new Set(memberIds);
-
     if (members.length !== memberIds.length) {
       return res.status(404).json({ message: "One or more members not found" });
     }
@@ -195,27 +192,29 @@ export const addMemberToMinistry = async (req: Request, res: Response) => {
       }
     }
 
-    // Add members to the ministry if not already added
+    // Filter out the members that are already in the ministry
     const newMemberIds = memberIds.filter(
       (memberId) => !ministry.members!.includes(memberId)
     );
+
+    // Update the Ministry using findOneAndUpdate
     if (newMemberIds.length > 0) {
-      ministry.members.push(...newMemberIds);
-      await ministry.save();
+      await Ministry.findOneAndUpdate(
+        { _id: id },
+        { $addToSet: { members: { $each: newMemberIds } } },
+        { new: true } // Return the updated document
+      );
     }
 
-    // Add the ministry to the members if not already added
+    // Update each member to add the ministry if not already present
     const updates = members.map(async (member) => {
-      member.ministries = member.ministries || [];
-      if (
-        !member.ministries.some((ministryId) =>
-          ministryId.equals(ministry._id as mongoose.Types.ObjectId)
-        )
-      ) {
-        member.ministries.push(ministry._id as mongoose.Types.ObjectId);
-        await member.save();
-      }
+      await Membership.findOneAndUpdate(
+        { _id: member._id },
+        { $addToSet: { ministries: ministry._id } },
+        { new: true } // Return the updated document
+      );
     });
+
     await Promise.all(updates);
 
     res.status(200).json({

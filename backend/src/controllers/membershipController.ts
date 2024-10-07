@@ -438,11 +438,10 @@ export const addMinistriesToMember = async (req: Request, res: Response) => {
     }
 
     // Initialize ministries array if undefined
-    member.ministries = member.ministries || [];
+    const updatedMinistries = member.ministries || [];
 
     // Find the ministries by IDs
     const ministries = await Ministry.find({ _id: { $in: ministryIds } });
-    const ministryIdsSet = new Set(ministryIds);
 
     if (ministries.length !== ministryIds.length) {
       return res
@@ -452,41 +451,53 @@ export const addMinistriesToMember = async (req: Request, res: Response) => {
 
     // Ensure ministries belong to the same local church as the member
     for (const ministry of ministries) {
-      if (!ministry.localChurch.equals(ministry.localChurch)) {
+      if (!ministry.localChurch.equals(member.localChurch)) {
         return res.status(400).json({
           message:
-            "All members and the Ministry must belong to the same local church",
+            "All ministries and the member must belong to the same local church",
         });
       }
     }
 
     // Add ministries to the member if not already added
     const newMinistryIds = ministryIds.filter(
-      (ministryId) => !member.ministries!.includes(ministryId)
+      (ministryId) => !updatedMinistries!.includes(ministryId)
     );
     if (newMinistryIds.length > 0) {
-      member.ministries.push(...newMinistryIds);
-      await member.save();
+      updatedMinistries.push(...newMinistryIds);
     }
 
-    // Add the member to each ministry if not already added
-    const updates = ministries.map(async (ministry) => {
-      ministry.members = ministry.members || [];
-      if (
-        !ministry.members.some((memberId) =>
-          memberId.equals(member._id as Types.ObjectId)
-        )
-      ) {
-        ministry.members.push(member._id as Types.ObjectId);
-        await ministry.save();
-      }
-    });
-    await Promise.all(updates);
+    // Use findOneAndUpdate to update the ministries
+    const updatedMember = await Membership.findOneAndUpdate(
+      { _id: id },
+      { $set: { ministries: updatedMinistries } }, // Update ministries
+      { new: true } // Return the updated document
+    );
 
-    res.status(200).json({
-      success: true,
-      message: "Ministries successfully added to member",
-    });
+    if (updatedMember) {
+      // Add the member to each ministry if not already added
+      const updates = ministries.map(async (ministry) => {
+        ministry.members = ministry.members || [];
+        if (
+          !ministry.members.some((memberId) =>
+            memberId.equals(updatedMember._id as Types.ObjectId)
+          )
+        ) {
+          ministry.members.push(updatedMember._id as Types.ObjectId);
+          await ministry.save();
+        }
+      });
+      await Promise.all(updates);
+
+      res.status(200).json({
+        success: true,
+        message: "Ministries successfully added to member",
+      });
+    } else {
+      res
+        .status(404)
+        .json({ message: "Failed to update ministries for member" });
+    }
   } catch (err) {
     handleError(
       res,
