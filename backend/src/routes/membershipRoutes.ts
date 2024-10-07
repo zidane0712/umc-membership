@@ -42,7 +42,7 @@ router
   )
   .delete(asyncHandler(deleteMember));
 
-router.route("/:id/add-ministry").post(asyncHandler(addMinistriesToMember));
+router.route("/:id/add-ministry").put(asyncHandler(addMinistriesToMember));
 
 router.use(errorHandler);
 
