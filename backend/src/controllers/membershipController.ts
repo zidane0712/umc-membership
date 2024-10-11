@@ -248,9 +248,17 @@ export const getAllMemberships = async (req: Request, res: Response) => {
 
 // Create a new membership
 export const createMembership = async (req: Request, res: Response) => {
-  const { name, district, localChurch } = req.body;
+  const { name, birthday, district, localChurch } = req.body;
 
   try {
+    // Check if the birthday is in the future
+    if (birthday && new Date(birthday) > new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Birthday date must not be greater than the current date.",
+      });
+    }
+
     // Check if a membership already exists with the same name, district, and local church
     const existingMembership = await Membership.findOne({
       name,
@@ -259,7 +267,7 @@ export const createMembership = async (req: Request, res: Response) => {
     if (existingMembership) {
       return res.status(409).json({
         success: false,
-        message: "Aaaaaa",
+        message: "Member already exists>",
       });
     }
 

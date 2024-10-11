@@ -83,8 +83,6 @@ export const getAllCouncil = async (req: Request, res: Response) => {
         $unwind: { path: "$nurture.members", preserveNullAndEmptyArrays: true },
       },
 
-      // Continue lookup/unwind for other nurture, outreach, witness, communications, etc.
-
       // Populate finance members
       {
         $lookup: {
