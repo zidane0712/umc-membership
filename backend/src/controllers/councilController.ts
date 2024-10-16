@@ -31,7 +31,7 @@ export const getAllCouncil = async (req: Request, res: Response) => {
       // Populate localChurch
       {
         $lookup: {
-          from: "localchurches",
+          from: "locals",
           localField: "localChurch",
           foreignField: "_id",
           as: "localChurch",
@@ -39,19 +39,13 @@ export const getAllCouncil = async (req: Request, res: Response) => {
       },
       { $unwind: { path: "$localChurch", preserveNullAndEmptyArrays: true } },
 
-      // Populate administrative office members
+      // Administrative Office Population
       {
         $lookup: {
           from: "memberships",
           localField: "administrativeOffice.chairperson",
           foreignField: "_id",
           as: "administrativeOffice.chairperson",
-        },
-      },
-      {
-        $unwind: {
-          path: "$administrativeOffice.chairperson",
-          preserveNullAndEmptyArrays: true,
         },
       },
       {
@@ -63,14 +57,143 @@ export const getAllCouncil = async (req: Request, res: Response) => {
         },
       },
       {
-        $unwind: {
-          path: "$administrativeOffice.layLeader",
-          preserveNullAndEmptyArrays: true,
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.layDelegate",
+          foreignField: "_id",
+          as: "administrativeOffice.layDelegate",
         },
       },
-      // Add lookup/unwind for other administrative office members...
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.recordingSecretary",
+          foreignField: "_id",
+          as: "administrativeOffice.recordingSecretary",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.membershipSecretary",
+          foreignField: "_id",
+          as: "administrativeOffice.membershipSecretary",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.assistantSecretary",
+          foreignField: "_id",
+          as: "administrativeOffice.assistantSecretary",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.spprcChairperson",
+          foreignField: "_id",
+          as: "administrativeOffice.spprcChairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.botChairperson",
+          foreignField: "_id",
+          as: "administrativeOffice.botChairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.viceChairperson",
+          foreignField: "_id",
+          as: "administrativeOffice.viceChairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.umyfPresident",
+          foreignField: "_id",
+          as: "administrativeOffice.umyfPresident",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.umyafPresident",
+          foreignField: "_id",
+          as: "administrativeOffice.umyafPresident",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.umwPresident",
+          foreignField: "_id",
+          as: "administrativeOffice.umwPresident",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "administrativeOffice.ummPresident",
+          foreignField: "_id",
+          as: "administrativeOffice.ummPresident",
+        },
+      },
 
-      // Populate nurture members
+      // Lookup for Nurture
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "nurture.chairperson",
+          foreignField: "_id",
+          as: "nurture.chairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "nurture.worship",
+          foreignField: "_id",
+          as: "nurture.worship",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "nurture.assistant",
+          foreignField: "_id",
+          as: "nurture.assistant",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "nurture.sundaySchool",
+          foreignField: "_id",
+          as: "nurture.sundaySchool",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "nurture.christianEducation",
+          foreignField: "_id",
+          as: "nurture.christianEducation",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "nurture.stewardship",
+          foreignField: "_id",
+          as: "nurture.stewardship",
+        },
+      },
       {
         $lookup: {
           from: "memberships",
@@ -79,11 +202,144 @@ export const getAllCouncil = async (req: Request, res: Response) => {
           as: "nurture.members",
         },
       },
+
+      // Lookup for Outreach
       {
-        $unwind: { path: "$nurture.members", preserveNullAndEmptyArrays: true },
+        $lookup: {
+          from: "memberships",
+          localField: "outreach.chairperson",
+          foreignField: "_id",
+          as: "outreach.chairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "outreach.viceChairperson",
+          foreignField: "_id",
+          as: "outreach.viceChairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "outreach.members",
+          foreignField: "_id",
+          as: "outreach.members",
+        },
       },
 
-      // Populate finance members
+      // Lookup for Witness
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "witness.chairperson",
+          foreignField: "_id",
+          as: "witness.chairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "witness.viceChairperson",
+          foreignField: "_id",
+          as: "witness.viceChairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "witness.membershipCare",
+          foreignField: "_id",
+          as: "witness.membershipCare",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "witness.members",
+          foreignField: "_id",
+          as: "witness.members",
+        },
+      },
+
+      // Lookup for Church Historian
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "churchHistorian.chairperson",
+          foreignField: "_id",
+          as: "churchHistorian.chairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "churchHistorian.assistant",
+          foreignField: "_id",
+          as: "churchHistorian.assistant",
+        },
+      },
+
+      // Lookup for Communications
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "communications.chairperson",
+          foreignField: "_id",
+          as: "communications.chairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "communications.assistant",
+          foreignField: "_id",
+          as: "communications.assistant",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "communications.members",
+          foreignField: "_id",
+          as: "communications.members",
+        },
+      },
+
+      // Lookup for Finance
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "finance.financeChairperson",
+          foreignField: "_id",
+          as: "finance.financeChairperson",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "finance.treasurer",
+          foreignField: "_id",
+          as: "finance.treasurer",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "finance.auditor",
+          foreignField: "_id",
+          as: "finance.auditor",
+        },
+      },
+      {
+        $lookup: {
+          from: "memberships",
+          localField: "finance.financeSecretary",
+          foreignField: "_id",
+          as: "finance.financeSecretary",
+        },
+      },
       {
         $lookup: {
           from: "memberships",
@@ -92,8 +348,153 @@ export const getAllCouncil = async (req: Request, res: Response) => {
           as: "finance.members",
         },
       },
+
+      // Add the rest of your $lookup operations here for nurture, finance, etc.
+
+      // Group results to avoid duplication
       {
-        $unwind: { path: "$finance.members", preserveNullAndEmptyArrays: true },
+        $group: {
+          _id: "$_id",
+          startYear: { $first: "$startYear" },
+          endYear: { $first: "$endYear" },
+          localChurch: { $first: "$localChurch" },
+          administrativeOffice: { $first: "$administrativeOffice" },
+          nurture: { $first: "$nurture" },
+          finance: { $first: "$finance" },
+          outreach: { $first: "$outreach" },
+          witness: { $first: "$witness" },
+          churchHistorian: { $first: "$churchHistorian" },
+          communications: { $first: "$communications" },
+        },
+      },
+
+      // Project only the necessary fields
+      {
+        $project: {
+          // Administrative Office
+          "administrativeOffice.chairperson._id": 1,
+          "administrativeOffice.chairperson.name": 1,
+
+          "administrativeOffice.layLeader._id": 1,
+          "administrativeOffice.layLeader.name": 1,
+
+          "administrativeOffice.layDelegate._id": 1,
+          "administrativeOffice.layDelegate.name": 1,
+
+          "administrativeOffice.recordingSecretary._id": 1,
+          "administrativeOffice.recordingSecretary.name": 1,
+
+          "administrativeOffice.membershipSecretary._id": 1,
+          "administrativeOffice.membershipSecretary.name": 1,
+
+          "administrativeOffice.assistantSecretary._id": 1,
+          "administrativeOffice.assistantSecretary.name": 1,
+
+          "administrativeOffice.spprcChairperson._id": 1,
+          "administrativeOffice.spprcChairperson.name": 1,
+
+          "administrativeOffice.botChairperson._id": 1,
+          "administrativeOffice.botChairperson.name": 1,
+
+          "administrativeOffice.viceChairperson._id": 1,
+          "administrativeOffice.viceChairperson.name": 1,
+
+          "administrativeOffice.umyfPresident._id": 1,
+          "administrativeOffice.umyfPresident.name": 1,
+
+          "administrativeOffice.umyafPresident._id": 1,
+          "administrativeOffice.umyafPresident.name": 1,
+
+          "administrativeOffice.umwPresident._id": 1,
+          "administrativeOffice.umwPresident.name": 1,
+
+          "administrativeOffice.ummPresident._id": 1,
+          "administrativeOffice.ummPresident.name": 1,
+
+          // Nurture
+          "nurture.chairperson._id": 1,
+          "nurture.chairperson.name": 1,
+
+          "nurture.worship._id": 1,
+          "nurture.worship.name": 1,
+
+          "nurture.assistant._id": 1,
+          "nurture.assistant.name": 1,
+
+          "nurture.sundaySchool._id": 1,
+          "nurture.sundaySchool.name": 1,
+
+          "nurture.christianEducation._id": 1,
+          "nurture.christianEducation.name": 1,
+
+          "nurture.stewardship._id": 1,
+          "nurture.stewardship.name": 1,
+
+          "nurture.members._id": 1,
+          "nurture.members.name": 1,
+
+          // Outreach
+          "outreach.chairperson._id": 1,
+          "outreach.chairperson.name": 1,
+
+          "outreach.viceChairperson._id": 1,
+          "outreach.viceChairperson.name": 1,
+
+          "outreach.members._id": 1,
+          "outreach.members.name": 1,
+
+          // Witness
+          "witness.chairperson._id": 1,
+          "witness.chairperson.name": 1,
+
+          "witness.viceChairperson._id": 1,
+          "witness.viceChairperson.name": 1,
+
+          "witness.membershipCare._id": 1,
+          "witness.membershipCare.name": 1,
+
+          "witness.members._id": 1,
+          "witness.members.name": 1,
+
+          // Church Historian
+          "churchHistorian.chairperson._id": 1,
+          "churchHistorian.chairperson.name": 1,
+
+          "churchHistorian.assistant._id": 1,
+          "churchHistorian.assistant.name": 1,
+
+          // Communications
+          "communications.chairperson._id": 1,
+          "communications.chairperson.name": 1,
+
+          "communications.assistant._id": 1,
+          "communications.assistant.name": 1,
+
+          "communications.members._id": 1,
+          "communications.members.name": 1,
+
+          // Finance
+          "finance.financeChairperson._id": 1,
+          "finance.financeChairperson.name": 1,
+
+          "finance.treasurer._id": 1,
+          "finance.treasurer.name": 1,
+
+          "finance.auditor._id": 1,
+          "finance.auditor.name": 1,
+
+          "finance.financeSecretary._id": 1,
+          "finance.financeSecretary.name": 1,
+
+          "finance.members._id": 1,
+          "finance.members.name": 1,
+
+          // Include any other relevant fields from the council
+          startYear: 1,
+          endYear: 1,
+          "localChurch._id": 1,
+          "localChurch.name": 1,
+        },
       }
     );
 
