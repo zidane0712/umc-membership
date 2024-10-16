@@ -23,7 +23,7 @@ export const getAllFamily = async (req: Request, res: Response) => {
     const pipeline: any[] = [
       {
         $lookup: {
-          from: "membership",
+          from: "memberships",
           localField: "father",
           foreignField: "_id",
           as: "father",
@@ -37,7 +37,7 @@ export const getAllFamily = async (req: Request, res: Response) => {
       },
       {
         $lookup: {
-          from: "membership",
+          from: "memberships",
           localField: "mother",
           foreignField: "_id",
           as: "mother",
@@ -51,7 +51,7 @@ export const getAllFamily = async (req: Request, res: Response) => {
       },
       {
         $lookup: {
-          from: "membership",
+          from: "memberships",
           localField: "children",
           foreignField: "_id",
           as: "children",
