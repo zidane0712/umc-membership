@@ -733,6 +733,15 @@ export const updateCouncil = async (req: Request, res: Response) => {
       finance,
     } = req.body;
 
+    // Check if the council with the provided ID exists
+    const existingCouncilById = await Council.findById(id);
+    if (!existingCouncilById) {
+      return res.status(404).json({
+        success: false,
+        message: "Council not found with the provided ID.",
+      });
+    }
+
     // Validate that endYear is greater than startYear and at least 1 year apart
     const startDate = new Date(startYear);
     const endDate = new Date(endYear);

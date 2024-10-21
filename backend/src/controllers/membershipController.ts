@@ -356,6 +356,13 @@ export const updateMember = async (
       });
     }
 
+    if (!existingMembership) {
+      return res.status(404).json({
+        success: false,
+        message: "Membership not found with the provided ID.",
+      });
+    }
+
     if (annualConference) {
       const annualConferenceCheck = await Annual.findById(annualConference);
       if (!annualConferenceCheck) {
@@ -417,6 +424,7 @@ export const updateMember = async (
 export const deleteMember = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
     const deletedMember = await Membership.findByIdAndDelete(id);
 
     if (!deletedMember) {

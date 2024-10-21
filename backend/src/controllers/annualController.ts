@@ -116,6 +116,13 @@ export const updateAnnual = async (req: Request, res: Response) => {
       });
     }
 
+    if (!existingAnnualConference) {
+      return res.status(404).json({
+        success: false,
+        message: "Annual Conference not found with the provided ID.",
+      });
+    }
+
     const updateAnnual = await Annual.findByIdAndUpdate(id, req.body, {
       new: true,
     });
@@ -136,6 +143,7 @@ export const updateAnnual = async (req: Request, res: Response) => {
 export const deleteAnnual = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
     const deletedAnnual = await Annual.findByIdAndDelete(id);
 
     if (!deletedAnnual) {

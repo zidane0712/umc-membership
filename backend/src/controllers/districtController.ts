@@ -146,6 +146,15 @@ export const updateDistrict = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, annualConference } = req.body;
 
+    // Check if the district with the provided ID exists
+    const existingDistrict = await District.findById(id);
+    if (!existingDistrict) {
+      return res.status(404).json({
+        success: false,
+        message: "District not found with the provided ID.",
+      });
+    }
+
     // Check if there's another district conference with same name and annual conference
     const existingDistrictConference = await District.findOne({
       name,
@@ -191,6 +200,16 @@ export const updateDistrict = async (req: Request, res: Response) => {
 export const deleteDistrict = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    // Check if the district with the provided ID exists
+    const existingDistrict = await District.findById(id);
+    if (!existingDistrict) {
+      return res.status(404).json({
+        success: false,
+        message: "District not found with the provided ID.",
+      });
+    }
+
     const deleteDistrict = await District.findByIdAndDelete(id);
 
     if (!deleteDistrict) {

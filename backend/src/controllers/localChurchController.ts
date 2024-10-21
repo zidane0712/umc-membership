@@ -221,6 +221,13 @@ export const updateLocalChurch = async (req: Request, res: Response) => {
       });
     }
 
+    if (!existingLocalChurch) {
+      return res.status(404).json({
+        success: false,
+        message: "Local Church not found with the provided ID.",
+      });
+    }
+
     if (district) {
       const districtCheck = await District.findById(district);
 

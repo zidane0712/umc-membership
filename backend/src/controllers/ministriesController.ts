@@ -119,6 +119,13 @@ export const updateMinistry = async (req: Request, res: Response) => {
       });
     }
 
+    if (!existingMinistry) {
+      return res.status(404).json({
+        success: false,
+        message: "Ministry not found with provided id",
+      });
+    }
+
     if (localChurch) {
       const localChurchCheck = await Local.findById(localChurch);
       if (!localChurchCheck) {

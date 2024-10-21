@@ -253,6 +253,15 @@ export const updateFamily = async (req: Request, res: Response) => {
     req.body;
 
   try {
+    // Check if the family with the provided ID exists
+    const existingFamilyById = await Family.findById(id);
+    if (!existingFamilyById) {
+      return res.status(404).json({
+        success: false,
+        message: "Family not found with the provided ID.",
+      });
+    }
+
     // Ensure at least one of father, mother, or children is provided
     if (!father && !mother && (!children || children.length === 0)) {
       return res.status(400).json({
