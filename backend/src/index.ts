@@ -15,6 +15,7 @@ import localChurchRoutes from "./routes/localChurchRoutes";
 import ministryRoutes from "./routes/ministriesRoutes";
 import councilRoutes from "./routes/councilRoutes";
 import familyRoutes from "./routes/familyRoutes";
+import attendanceRoutes from "./routes/attendanceRoutes";
 import logRoutes from "./routes/logRoutes";
 
 // [APP CONFIGURATION]
@@ -43,6 +44,7 @@ app.use("/localChurch", localChurchRoutes);
 app.use("/ministry", ministryRoutes);
 app.use("/council", councilRoutes);
 app.use("/family", familyRoutes);
+app.use("/attendance", attendanceRoutes);
 app.use("/logs", logRoutes);
 
 // Error handling middleware

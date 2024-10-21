@@ -5,7 +5,7 @@ import Joi from "joi";
 // [JOI SCHEMA]
 // Family schema for creating a family
 export const createFamilySchema = Joi.object({
-  familyName: Joi.string().required().messages({
+  familyName: Joi.string().required().trim().messages({
     "string.base": "Family name must be a string",
     "any.required": "Family name is required",
   }),
@@ -21,7 +21,7 @@ export const createFamilySchema = Joi.object({
 
 // Family schema for updating a family
 export const updateFamilySchema = Joi.object({
-  familyName: Joi.string().optional().messages({
+  familyName: Joi.string().optional().trim().messages({
     "string.base": "Family name must be a string",
   }),
   father: Joi.optional().messages({
