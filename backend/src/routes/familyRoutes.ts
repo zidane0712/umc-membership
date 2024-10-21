@@ -6,7 +6,13 @@ import {
   createFamilySchema,
   updateFamilySchema,
 } from "../validators/familyValidator";
-import { getAllFamily, createFamily } from "../controllers/familyController";
+import {
+  getAllFamily,
+  createFamily,
+  getFamilyById,
+  updateFamily,
+  deleteFamily,
+} from "../controllers/familyController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validate } from "../middleware/validate";
@@ -23,6 +29,16 @@ router
     validateLocalChurch,
     asyncHandler(createFamily)
   );
+
+router
+  .route("/:id")
+  .get(asyncHandler(getFamilyById))
+  .put(
+    validate(updateFamilySchema),
+    validateLocalChurch,
+    asyncHandler(updateFamily)
+  )
+  .delete(asyncHandler(deleteFamily));
 
 router.use(errorHandler);
 

@@ -225,3 +225,160 @@ export const createFamily = async (req: Request, res: Response) => {
     handleError(res, err, "An error occurred while creating the family");
   }
 };
+
+// Get family by id
+export const getFamilyById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const family = await Family.findById(id)
+      .populate("localChurch", "name")
+      .populate("father", "name")
+      .populate("mother", "name")
+      .populate("children", "name");
+
+    if (!family) {
+      return res.status(404).json({ message: "Family not found" });
+    }
+
+    res.status(200).json({ success: true, data: family });
+  } catch (err) {
+    handleError(res, err, "An error occurred while getting family");
+  }
+};
+
+// Update family by id
+export const updateFamily = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { familyName, father, mother, weddingDate, children, localChurch } =
+    req.body;
+
+  try {
+    // Ensure at least one of father, mother, or children is provided
+    if (!father && !mother && (!children || children.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "At least one of father, mother, or children must be provided.",
+      });
+    }
+
+    // Check if the weddingDate is in the future
+    if (weddingDate && new Date(weddingDate) > new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Wedding date must not be greater than the current date.",
+      });
+    }
+
+    // Validate IDs for father, mother, and children
+    const memberIdsToCheck: Types.ObjectId[] = [
+      father,
+      mother,
+      ...(Array.isArray(children) ? children : []), // Use children directly if it's an array
+    ].filter(Boolean) as Types.ObjectId[]; // Remove any undefined values and cast to ObjectId
+
+    // Fetch members from the database using member IDs
+    const members: (IMembership & { _id: Types.ObjectId })[] =
+      await Membership.find({
+        _id: { $in: memberIdsToCheck },
+      });
+
+    // Check if any member is missing
+    if (members.length !== memberIdsToCheck.length) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "One or more members (father, mother, or children) do not exist in the Membership collection.",
+      });
+    }
+
+    // Validate father's gender if provided
+    if (father) {
+      const fatherMember = members.find((member) => member._id.equals(father));
+      if (fatherMember && fatherMember.gender !== "male") {
+        return res.status(400).json({
+          success: false,
+          message: "Father must be male.",
+        });
+      }
+    }
+
+    // Validate mother's gender if provided
+    if (mother) {
+      const motherMember = members.find((member) => member._id.equals(mother));
+      if (motherMember && motherMember.gender !== "female") {
+        return res.status(400).json({
+          success: false,
+          message: "Mother must be female.",
+        });
+      }
+    }
+
+    // Ensure all members belong to the same local church
+    const allMembersBelongToSameChurch = members.every(
+      (member) => member.localChurch.toString() === localChurch
+    );
+
+    if (!allMembersBelongToSameChurch) {
+      return res.status(400).json({
+        success: false,
+        message: "All members must belong to the same local church.",
+      });
+    }
+
+    // Check for existing family in the same local church with the same name
+    const existingFamily = await Family.findOne({
+      _id: { $ne: id },
+      familyName,
+      localChurch,
+    });
+
+    if (existingFamily) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "A family with the same name already exists in this local church.",
+      });
+    }
+
+    // Update the family document
+    const updatedFamily = await Family.findByIdAndUpdate(
+      id,
+      { familyName, father, mother, weddingDate, children, localChurch },
+      { new: true }
+    );
+
+    if (!updatedFamily) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Family not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedFamily,
+    });
+  } catch (err) {
+    handleError(res, err, "An error occurred while updating the family");
+  }
+};
+
+// Delete council
+export const deleteFamily = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const deleteFamily = await Family.findByIdAndDelete(id);
+
+    if (!deleteFamily) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Family not found" });
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "Family deleted successfully" });
+  } catch (err) {
+    handleError(res, err, "An error occurred while deleting family");
+  }
+};
