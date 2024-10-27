@@ -9,6 +9,9 @@ import {
 import {
   getAllAttendance,
   createAttendance,
+  getAttendanceById,
+  updateAttendance,
+  deleteAttendance,
 } from "../controllers/attendanceController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
@@ -26,6 +29,16 @@ router
     validateLocalChurch,
     asyncHandler(createAttendance)
   );
+
+router
+  .route("/:id")
+  .get(asyncHandler(getAttendanceById))
+  .put(
+    validate(updateAttendanceSchema),
+    validateLocalChurch,
+    asyncHandler(updateAttendance)
+  )
+  .delete(asyncHandler(deleteAttendance));
 
 router.use(errorHandler);
 

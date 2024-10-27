@@ -323,11 +323,7 @@ export const getMemberById = async (req: Request, res: Response) => {
 };
 
 // Update a member by ID
-export const updateMember = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const updateMember = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const {
