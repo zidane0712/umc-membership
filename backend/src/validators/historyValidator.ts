@@ -26,6 +26,10 @@ export const createHistorySchema = Joi.object({
   mediaLink: Joi.array().items(Joi.string().uri()).optional().messages({
     "array.includesRequiredUnknowns": "Each media link must be a valid URI",
   }),
+  localChurch: Joi.string().required().messages({
+    "string.base": "Local Church must be a string",
+    "any.required": "Local Church is required",
+  }),
   customId: Joi.string().optional().messages({
     "string.base": "Custom ID must be a string",
   }),
@@ -50,6 +54,9 @@ export const updateHistorySchema = Joi.object({
   }),
   mediaLink: Joi.array().items(Joi.string().uri()).optional().messages({
     "array.includesRequiredUnknowns": "Each media link must be a valid URI",
+  }),
+  localChurch: Joi.optional().messages({
+    "string.base": "Local church's id must be a valid ObjectId",
   }),
   customId: Joi.string().optional().messages({
     "string.base": "Custom ID must be a string",
