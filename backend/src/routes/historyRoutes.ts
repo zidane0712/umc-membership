@@ -6,7 +6,13 @@ import {
   createHistorySchema,
   updateHistorySchema,
 } from "../validators/historyValidator";
-import { getAllHistory, createHistory } from "../controllers/historyController";
+import {
+  getAllHistory,
+  createHistory,
+  getHistoryById,
+  updateHistory,
+  deleteHistory,
+} from "../controllers/historyController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validate } from "../middleware/validate";
@@ -23,6 +29,16 @@ router
     validateLocalChurch,
     asyncHandler(createHistory)
   );
+
+router
+  .route("/:id")
+  .get(asyncHandler(getHistoryById))
+  .put(
+    validate(updateHistorySchema),
+    validateLocalChurch,
+    asyncHandler(updateHistory)
+  )
+  .delete(asyncHandler(deleteHistory));
 
 router.use(errorHandler);
 

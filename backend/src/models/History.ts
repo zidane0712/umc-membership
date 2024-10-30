@@ -51,6 +51,11 @@ const historySchema = new Schema<IHistory>(
         trim: true,
       },
     ],
+    mediaLink: [
+      {
+        type: String,
+      },
+    ],
     customId: { type: String, unique: true },
   },
   { timestamps: true }
