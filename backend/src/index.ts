@@ -17,6 +17,7 @@ import councilRoutes from "./routes/councilRoutes";
 import familyRoutes from "./routes/familyRoutes";
 import attendanceRoutes from "./routes/attendanceRoutes";
 import historyRoutes from "./routes/historyRoutes";
+import userRoutes from "./routes/userRoutes";
 import logRoutes from "./routes/logRoutes";
 
 // [APP CONFIGURATION]
@@ -47,6 +48,7 @@ app.use("/council", councilRoutes);
 app.use("/family", familyRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/history", historyRoutes);
+app.use("/user", userRoutes);
 app.use("/logs", logRoutes);
 
 // Error handling middleware
