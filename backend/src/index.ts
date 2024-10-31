@@ -19,6 +19,7 @@ import attendanceRoutes from "./routes/attendanceRoutes";
 import historyRoutes from "./routes/historyRoutes";
 import userRoutes from "./routes/userRoutes";
 import logRoutes from "./routes/logRoutes";
+import { createInitialAdmin } from "./utils/initialUser";
 
 // [APP CONFIGURATION]
 const app: Application = express();
@@ -32,7 +33,12 @@ app.use(express.urlencoded({ extended: true })); // To parse URL-encoded bodies
 // [MONGOOSE DB CONNECTION]
 mongoose
   .connect(process.env.MONGO_URI as string)
-  .then(() => console.log("Connection open"))
+  .then(async () => {
+    console.log("Connection open");
+
+    // Create the initial admin user
+    await createInitialAdmin(); // Call the function here
+  })
   .catch((err: Error) => {
     console.log("Connection error");
     console.log(err);
