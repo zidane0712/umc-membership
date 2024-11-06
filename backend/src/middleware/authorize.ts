@@ -16,19 +16,25 @@ export const authorize =
     try {
       const token = req.headers.authorization?.split(" ")[1];
       if (!token) {
+        console.log("No token found");
         return res.status(401).json({ message: "Access token is required" });
       }
 
       const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-      const user = await User.findById(decoded.userId);
+      console.log("Decoded token:", decoded);
+
+      const user = await User.findById(decoded.id);
+      console.log("Found user:", user);
 
       if (!user || !allowedRoles.includes(user.role)) {
+        console.log("User role not allowed or user not found");
         return res.status(403).json({ message: "Access denied" });
       }
 
       (req as AuthenticatedRequest).user = user;
       next();
     } catch (err) {
-      return res.status(403).json({ message: "Invalide or expired token" });
+      console.log("Token error:", err);
+      return res.status(403).json({ message: "Invalid or expired token" });
     }
   };

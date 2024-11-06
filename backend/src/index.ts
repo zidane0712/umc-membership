@@ -37,7 +37,7 @@ mongoose
     console.log("Connection open");
 
     // Create the initial admin user
-    await createInitialAdmin(); // Call the function here
+    await createInitialAdmin();
   })
   .catch((err: Error) => {
     console.log("Connection error");

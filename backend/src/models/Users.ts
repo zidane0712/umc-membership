@@ -23,7 +23,6 @@ export interface IUser extends Document {
   localChurch?: Types.ObjectId;
   district?: Types.ObjectId;
   annual?: Types.ObjectId;
-  customId: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -60,7 +59,6 @@ const userSchema = new Schema<IUser>(
         return this.role === Role.ANNUAL;
       },
     },
-    customId: { type: String, unique: true },
   },
   { timestamps: true }
 );

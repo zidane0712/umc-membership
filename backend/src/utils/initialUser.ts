@@ -8,12 +8,10 @@ import { handleError } from "./handleError";
 // [FUNCTION]
 export const createInitialAdmin = async () => {
   try {
-    // Checks if an admin user already exists
     const existingAdmin = await User.findOne({ role: "admin" });
-
     if (existingAdmin) {
       console.log("Initial admin already exists");
-      return; // Exit if the admin exists
+      return;
     }
 
     const adminDetails = {
@@ -23,13 +21,13 @@ export const createInitialAdmin = async () => {
       role: "admin",
     };
 
-    const hashedPassword = await bcrypt.hash(adminDetails.password!, 10);
+    if (!adminDetails.password) {
+      throw new Error("ADMIN_PASSWORD is not defined in the .env file.");
+    }
 
-    const adminUser = new User({
-      ...adminDetails,
-      password: hashedPassword,
-    });
+    console.log("Plain text password from .env:", adminDetails.password);
 
+    const adminUser = new User(adminDetails);
     await adminUser.save();
     console.log("Initial admin user created successfully.");
   } catch (err) {

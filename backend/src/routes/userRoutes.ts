@@ -7,7 +7,7 @@ import {
   createUserSchema,
   updateUserSchema,
 } from "../validators/userValidator";
-import { getAllUser } from "../controllers/userController";
+import { loginUser, getAllUser } from "../controllers/userController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validate } from "../middleware/validate";
@@ -15,7 +15,10 @@ import { validate } from "../middleware/validate";
 const router = express.Router();
 
 // [ROUTES]
-router.route("/").get(asyncHandler(getAllUser));
+// router.route("/").get(authorize(["admin"]),asyncHandler(getAllUser))
+router.route("/login").post(asyncHandler(loginUser));
+
+router.route("/").get(authorize(["admin"]), asyncHandler(getAllUser));
 
 router.use(errorHandler);
 
