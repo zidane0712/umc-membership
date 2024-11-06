@@ -21,10 +21,8 @@ export const authorize =
       }
 
       const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-      console.log("Decoded token:", decoded);
 
       const user = await User.findById(decoded.id);
-      console.log("Found user:", user);
 
       if (!user || !allowedRoles.includes(user.role)) {
         console.log("User role not allowed or user not found");

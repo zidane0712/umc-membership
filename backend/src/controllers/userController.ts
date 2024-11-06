@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 // Local import
 import { handleError } from "../utils/handleError";
 import User from "../models/Users";
+import Counter from "../models/Counter";
 
 // [CONTROLLERS]
 // Login
@@ -54,6 +55,63 @@ export const getAllUser = async (req: Request, res: Response) => {
 };
 
 // Create new users
+export const createUser = async (req: Request, res: Response) => {
+  const { username, email, password, role, localChurch, district, annual } =
+    req.body;
+
+  try {
+    // Validate required fields
+    if (!username || !email || !password || !role) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Check if the user already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Check if the email already exists
+    const existingEmail = await User.findOne({
+      email,
+    });
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    // Get the next sequence number from a counter collection
+    const counter = await Counter.findOneAndUpdate(
+      { _id: "userId" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    // Generate custom Id
+    const customId = `USER-${counter?.seq.toString().padStart(4, "0")}`;
+
+    // Create new user
+    const newUser = new User({
+      username,
+      email,
+      password,
+      role,
+      localChurch: role === "local" ? localChurch : undefined,
+      district: role === "district" ? district : undefined,
+      annual: role === "annual" ? annual : undefined,
+      customId,
+    });
+
+    // Save the new user
+    await newUser.save();
+
+    return res
+      .status(201)
+      .json({ message: "User created successfully", user: newUser });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
 // Get user by id
 
