@@ -78,7 +78,7 @@ userSchema.pre("save", async function (next) {
 
 // Logging middleware for user creation
 userSchema.post("save", async function (doc) {
-  const userId = doc?._id; // Document's ID
+  const userId = doc?._id;
   await Log.create({
     action: "created",
     collection: "User",
@@ -99,7 +99,7 @@ userSchema.post("findOneAndUpdate", async function (doc) {
       action: "updated",
       collection: "User",
       documentId: doc._id,
-      data: { prevData, newData: this.getUpdate() }, // Store both old and new data
+      data: { prevData, newData: this.getUpdate() },
       performedBy: this.getQuery()._id,
       timestamp: new Date(),
     });

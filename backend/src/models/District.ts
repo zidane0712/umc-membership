@@ -50,23 +50,30 @@ districtSchema.pre("save", async function (next) {
 });
 
 districtSchema.post("save", async function (doc) {
+  const districtId = doc?._id;
   await Log.create({
     action: "created",
     collection: "District",
-    documentId: doc._id,
+    documentId: districtId,
     data: doc.toObject(),
     timestamp: new Date(),
   });
 });
 
 districtSchema.post("findOneAndUpdate", async function (doc) {
-  await Log.create({
-    action: "updated",
-    collection: "District",
-    documentId: doc._id,
-    newData: doc.toObject(),
-    timestamp: new Date(),
-  });
+  if (doc) {
+    // Fetch previous data before update
+    const prevData = doc.toObject();
+
+    await Log.create({
+      action: "updated",
+      collection: "District",
+      documentId: doc._id,
+      data: { prevData, newData: this.getUpdate() },
+      performedBy: this.getQuery()._id,
+      timestamp: new Date(),
+    });
+  }
 });
 
 districtSchema.post("findOneAndDelete", async function (doc) {
@@ -76,6 +83,7 @@ districtSchema.post("findOneAndDelete", async function (doc) {
       collection: "District",
       documentId: doc._id,
       data: doc.toObject(),
+      performedBy: this.getQuery()._id,
       timestamp: new Date(),
     });
   }

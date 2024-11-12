@@ -50,23 +50,31 @@ annualSchema.pre("save", async function (next) {
 });
 
 annualSchema.post("save", async function (doc) {
+  const annualId = doc?._id;
   await Log.create({
     action: "created",
     collection: "Annual",
-    documentId: doc._id,
+    documentId: annualId,
     data: doc.toObject(),
+    performedBy: doc._id,
     timestamp: new Date(),
   });
 });
 
 annualSchema.post("findOneAndUpdate", async function (doc) {
-  await Log.create({
-    action: "updated",
-    collection: "Annual",
-    documentId: doc._id,
-    newData: doc.toObject(),
-    timestamp: new Date(),
-  });
+  if (doc) {
+    // Fetch previous data before update
+    const prevData = doc.toObject();
+
+    await Log.create({
+      action: "updated",
+      collection: "Annual",
+      documentId: doc._id,
+      data: { prevData, newData: this.getUpdate() },
+      performedBy: this.getQuery()._id,
+      timestamp: new Date(),
+    });
+  }
 });
 
 annualSchema.post("findOneAndDelete", async function (doc) {
@@ -76,6 +84,7 @@ annualSchema.post("findOneAndDelete", async function (doc) {
       collection: "Annual",
       documentId: doc._id,
       data: doc.toObject(),
+      performedBy: this.getQuery()._id,
       timestamp: new Date(),
     });
   }

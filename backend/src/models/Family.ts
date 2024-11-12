@@ -52,23 +52,31 @@ const familySchema = new Schema<IFamily>(
 
 // [MIDDLEWARE]
 familySchema.post("save", async function (doc) {
+  const familyId = doc?._id;
   await Log.create({
     action: "created",
     collection: "Family",
     documentId: doc._id,
     data: doc.toObject(),
+    performedBy: doc._id,
     timestamp: new Date(),
   });
 });
 
 familySchema.post("findOneAndUpdate", async function (doc) {
-  await Log.create({
-    action: "updated",
-    collection: "Family",
-    documentId: doc._id,
-    newData: doc.toObject(),
-    timestamp: new Date(),
-  });
+  if (doc) {
+    // Fetch previous data before update
+    const prevData = doc.toObject();
+
+    await Log.create({
+      action: "updated",
+      collection: "Family",
+      documentId: doc._id,
+      data: { prevData, newData: this.getUpdate() },
+      performedBy: this.getQuery()._id,
+      timestamp: new Date(),
+    });
+  }
 });
 
 familySchema.post("findOneAndDelete", async function (doc) {
@@ -78,6 +86,7 @@ familySchema.post("findOneAndDelete", async function (doc) {
       collection: "Family",
       documentId: doc._id,
       data: doc.toObject(),
+      performedBy: this.getQuery()._id,
       timestamp: new Date(),
     });
   }
