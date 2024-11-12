@@ -76,27 +76,37 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// Logging middleware
+// Logging middleware for user creation
 userSchema.post("save", async function (doc) {
+  const userId = doc?._id; // Document's ID
   await Log.create({
     action: "created",
     collection: "User",
-    documentId: doc._id,
+    documentId: userId,
     data: doc.toObject(),
+    performedBy: doc._id,
     timestamp: new Date(),
   });
 });
 
+// Logging middleware for user updates
 userSchema.post("findOneAndUpdate", async function (doc) {
-  await Log.create({
-    action: "updated",
-    collection: "User",
-    documentId: doc._id,
-    newData: doc.toObject(),
-    timestamp: new Date(),
-  });
+  if (doc) {
+    // Fetch previous data before update
+    const prevData = doc.toObject();
+
+    await Log.create({
+      action: "updated",
+      collection: "User",
+      documentId: doc._id,
+      data: { prevData, newData: this.getUpdate() }, // Store both old and new data
+      performedBy: this.getQuery()._id,
+      timestamp: new Date(),
+    });
+  }
 });
 
+// Logging middleware for user deletion
 userSchema.post("findOneAndDelete", async function (doc) {
   if (doc) {
     await Log.create({
@@ -104,6 +114,7 @@ userSchema.post("findOneAndDelete", async function (doc) {
       collection: "User",
       documentId: doc._id,
       data: doc.toObject(),
+      performedBy: this.getQuery()._id,
       timestamp: new Date(),
     });
   }

@@ -65,16 +65,42 @@ export const createUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check if the user already exists
+    // Password validation: at least 8 characters, one uppercase, one lowercase, one digit, and one special character
+    const passwordPattern =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+    if (!passwordPattern.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character.",
+      });
+    }
+
+    // Role-based validation for localChurch, district, and annual fields
+    if (role === "local" && !localChurch) {
+      return res.status(400).json({
+        message: "Local Church is required for users with the 'local' role.",
+      });
+    }
+    if (role === "district" && !district) {
+      return res.status(400).json({
+        message: "District is required for users with the 'district' role.",
+      });
+    }
+    if (role === "annual" && !annual) {
+      return res.status(400).json({
+        message:
+          "Annual Conference is required for users with the 'annual' role.",
+      });
+    }
+
+    // Check if the username already exists
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ message: "Username already exists" });
     }
 
     // Check if the email already exists
-    const existingEmail = await User.findOne({
-      email,
-    });
+    const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({ message: "Email already exists" });
     }
@@ -86,7 +112,7 @@ export const createUser = async (req: Request, res: Response) => {
       { new: true, upsert: true }
     );
 
-    // Generate custom Id
+    // Generate custom ID
     const customId = `USER-${counter?.seq.toString().padStart(4, "0")}`;
 
     // Create new user
@@ -114,7 +140,144 @@ export const createUser = async (req: Request, res: Response) => {
 };
 
 // Get user by id
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    handleError(res, err, "An error occurred while getting user");
+  }
+};
 
 // Update a user
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { username, email, password, role, localChurch, district, annual } =
+      req.body;
+
+    // Check if there's another user with the same username and email address
+    const existingUser = await User.findOne({
+      username,
+      email,
+      _id: { $ne: id },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "A user with this username and email already exists",
+      });
+    }
+
+    // Find the user by ID to update
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found with the provided ID.",
+      });
+    }
+
+    // Validate required fields based on the role
+    if (role === "local" && !localChurch) {
+      return res.status(400).json({
+        success: false,
+        message: "Local Church is required for users with the 'local' role.",
+      });
+    }
+    if (role === "district" && !district) {
+      return res.status(400).json({
+        success: false,
+        message: "District is required for users with the 'district' role.",
+      });
+    }
+    if (role === "annual" && !annual) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Annual Conference is required for users with the 'annual' role.",
+      });
+    }
+
+    // Update user fields based on the request body
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (role) user.role = role;
+
+    // Conditional assignment based on user role
+    if (role === "local") {
+      user.localChurch = localChurch;
+      user.district = undefined;
+      user.annual = undefined;
+    } else if (role === "district") {
+      user.district = district;
+      user.localChurch = undefined;
+      user.annual = undefined;
+    } else if (role === "annual") {
+      user.annual = annual;
+      user.localChurch = undefined;
+      user.district = undefined;
+    } else {
+      user.localChurch = undefined;
+      user.district = undefined;
+      user.annual = undefined;
+    }
+
+    if (password) {
+      user.password = password;
+    }
+
+    // Save the updated user document
+    await user.save();
+
+    return res.status(200).json({ message: "User updated successfully", user });
+  } catch (err) {
+    console.error("Error updating user:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
 // Delete user
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Find user by ID
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check if the user has the "admin" role
+    if (user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Cannot delete users with the admin role",
+      });
+    }
+
+    // Proceed to delete the user if they are not an admin
+    await user.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (err) {
+    handleError(res, err, "An error occurred while deleting the user");
+  }
+};

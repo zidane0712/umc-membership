@@ -11,6 +11,9 @@ import {
   loginUser,
   getAllUser,
   createUser,
+  getUserById,
+  updateUser,
+  deleteUser,
 } from "../controllers/userController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
@@ -36,6 +39,19 @@ router
     validateAnnualConference,
     asyncHandler(createUser)
   );
+
+router
+  .route("/:id")
+  .get(authorize(["admin"]), asyncHandler(getUserById))
+  .put(
+    authorize(["admin"]),
+    validate(updateUserSchema),
+    validateAnnualConference,
+    validateDistrictConference,
+    validateLocalChurch,
+    asyncHandler(updateUser)
+  )
+  .delete(authorize(["admin"]), asyncHandler(deleteUser));
 
 router.use(errorHandler);
 
