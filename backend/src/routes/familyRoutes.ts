@@ -2,6 +2,7 @@
 // Global import
 import express, { Request, Response, NextFunction } from "express";
 // Local import
+import { authorize } from "../middleware/authorize";
 import {
   createFamilySchema,
   updateFamilySchema,
@@ -23,8 +24,9 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllFamily))
+  .get(authorize(["local"]), asyncHandler(getAllFamily))
   .post(
+    authorize(["local"]),
     validate(createFamilySchema),
     validateLocalChurch,
     asyncHandler(createFamily)
@@ -32,13 +34,14 @@ router
 
 router
   .route("/:id")
-  .get(asyncHandler(getFamilyById))
+  .get(authorize(["local"]), asyncHandler(getFamilyById))
   .put(
+    authorize(["local"]),
     validate(updateFamilySchema),
     validateLocalChurch,
     asyncHandler(updateFamily)
   )
-  .delete(asyncHandler(deleteFamily));
+  .delete(authorize(["local"]), asyncHandler(deleteFamily));
 
 router.use(errorHandler);
 

@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from "express";
 import Joi from "joi";
 
 // [IMPORTS]
+import { authorize } from "../middleware/authorize";
 import {
   createAnnualSchema,
   updateAnnualSchema,
@@ -24,14 +25,22 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllAnnual))
-  .post(validate(createAnnualSchema), asyncHandler(createAnnual));
+  .get(authorize(["admin"]), asyncHandler(getAllAnnual))
+  .post(
+    authorize(["admin"]),
+    validate(createAnnualSchema),
+    asyncHandler(createAnnual)
+  );
 
 router
   .route("/:id")
-  .get(asyncHandler(getAnnualById))
-  .put(validate(updateAnnualSchema), asyncHandler(updateAnnual))
-  .delete(asyncHandler(deleteAnnual));
+  .get(authorize(["admin"]), asyncHandler(getAnnualById))
+  .put(
+    authorize(["admin"]),
+    validate(updateAnnualSchema),
+    asyncHandler(updateAnnual)
+  )
+  .delete(authorize(["admin"]), asyncHandler(deleteAnnual));
 
 router.use(errorHandler);
 

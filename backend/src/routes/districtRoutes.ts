@@ -1,7 +1,8 @@
 // [DEPENDENCIES]
 import express, { Request, Response, NextFunction } from "express";
- 
+
 // [IMPORTS]
+import { authorize } from "../middleware/authorize";
 import {
   createDistrictSchema,
   updateDistrictSchema,
@@ -23,8 +24,9 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllDistrict))
+  .get(authorize(["admin"]), asyncHandler(getAllDistrict))
   .post(
+    authorize(["admin"]),
     validate(createDistrictSchema),
     validateAnnualConference,
     asyncHandler(createDistrict)
@@ -32,13 +34,14 @@ router
 
 router
   .route("/:id")
-  .get(asyncHandler(getDistrictById))
+  .get(authorize(["admin"]), asyncHandler(getDistrictById))
   .put(
+    authorize(["admin"]),
     validate(updateDistrictSchema),
     validateAnnualConference,
     asyncHandler(updateDistrict)
   )
-  .delete(asyncHandler(deleteDistrict));
+  .delete(authorize(["admin"]), asyncHandler(deleteDistrict));
 
 router.use(errorHandler);
 

@@ -2,6 +2,7 @@
 import express, { Request, Response, NextFunction } from "express";
 
 // [IMPORTS]
+import { authorize } from "../middleware/authorize";
 import {
   createLocalChurchSchema,
   updateLocalChurchSchema,
@@ -25,26 +26,30 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllLocalChurch))
+  .get(authorize(["admin"]), asyncHandler(getAllLocalChurch))
   .post(
+    authorize(["admin"]),
     validate(createLocalChurchSchema),
     validateDistrictConference,
     validateAnnualConference,
     asyncHandler(createLocalChurch)
   );
 
-router.route("/anniversaries").get(asyncHandler(getAnniversariesByMonth));
+router
+  .route("/anniversaries")
+  .get(authorize(["admin"]), asyncHandler(getAnniversariesByMonth));
 
 router
   .route("/:id")
-  .get(asyncHandler(getLocalChurchById))
+  .get(authorize(["admin"]), asyncHandler(getLocalChurchById))
   .put(
+    authorize(["admin"]),
     validate(updateLocalChurchSchema),
     validateDistrictConference,
     validateAnnualConference,
     asyncHandler(updateLocalChurch)
   )
-  .delete(asyncHandler(deleteLocalChurch));
+  .delete(authorize(["admin"]), asyncHandler(deleteLocalChurch));
 
 router.use(errorHandler);
 

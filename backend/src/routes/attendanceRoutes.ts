@@ -2,6 +2,7 @@
 // Global import
 import express, { Request, Response, NextFunction } from "express";
 // Local import
+import { authorize } from "../middleware/authorize";
 import {
   createAttendanceSchema,
   updateAttendanceSchema,
@@ -23,8 +24,9 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllAttendance))
+  .get(authorize(["local"]), asyncHandler(getAllAttendance))
   .post(
+    authorize(["local"]),
     validate(createAttendanceSchema),
     validateLocalChurch,
     asyncHandler(createAttendance)
@@ -32,13 +34,14 @@ router
 
 router
   .route("/:id")
-  .get(asyncHandler(getAttendanceById))
+  .get(authorize(["local"]), asyncHandler(getAttendanceById))
   .put(
+    authorize(["local"]),
     validate(updateAttendanceSchema),
     validateLocalChurch,
     asyncHandler(updateAttendance)
   )
-  .delete(asyncHandler(deleteAttendance));
+  .delete(authorize(["local"]), asyncHandler(deleteAttendance));
 
 router.use(errorHandler);
 

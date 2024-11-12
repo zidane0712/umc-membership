@@ -2,6 +2,7 @@
 // Global import
 import express, { Request, Response, NextFunction } from "express";
 // Local import
+import { authorize } from "../middleware/authorize";
 import {
   createHistorySchema,
   updateHistorySchema,
@@ -23,8 +24,9 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllHistory))
+  .get(authorize(["local"]), asyncHandler(getAllHistory))
   .post(
+    authorize(["local"]),
     validate(createHistorySchema),
     validateLocalChurch,
     asyncHandler(createHistory)
@@ -32,13 +34,14 @@ router
 
 router
   .route("/:id")
-  .get(asyncHandler(getHistoryById))
+  .get(authorize(["local"]), asyncHandler(getHistoryById))
   .put(
+    authorize(["local"]),
     validate(updateHistorySchema),
     validateLocalChurch,
     asyncHandler(updateHistory)
   )
-  .delete(asyncHandler(deleteHistory));
+  .delete(authorize(["local"]), asyncHandler(deleteHistory));
 
 router.use(errorHandler);
 

@@ -2,6 +2,7 @@
 import express, { Request, Response, NextFunction } from "express";
 
 // [IMPORTS]
+import { authorize } from "../middleware/authorize";
 import {
   createMembershipSchema,
   updateMembershipSchema,
