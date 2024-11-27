@@ -25,18 +25,18 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(authorize(["admin"]), asyncHandler(getAllAnnual))
+  .get(authorize(["admin"], true), asyncHandler(getAllAnnual))
   .post(
-    authorize(["admin"]),
+    authorize(["admin"], true),
     validate(createAnnualSchema),
     asyncHandler(createAnnual)
   );
 
 router
   .route("/:id")
-  .get(authorize(["admin"]), asyncHandler(getAnnualById))
+  .get(authorize(["admin"], true), asyncHandler(getAnnualById))
   .put(
-    authorize(["admin"]),
+    authorize(["admin"], true),
     validate(updateAnnualSchema),
     asyncHandler(updateAnnual)
   )

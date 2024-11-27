@@ -8,13 +8,28 @@ import Local from "../models/Local";
 import District from "../models/District";
 import Annual from "../models/Annual";
 import Counter from "../models/Counter";
+import { AuthenticatedRequest } from "../middleware/authorize";
 
 // [CONTROLLERS]
 // Get all local church
-export const getAllLocalChurch = async (req: Request, res: Response) => {
+export const getAllLocalChurch = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const { episcopalArea, annualConference, district, search, month } =
-      req.query;
+    const {
+      episcopalArea,
+      annualConference,
+      district,
+      search,
+      month,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    // Convert pagination params to numbers
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
 
     // Ensure month is a string before validation
     const monthStr = typeof month === "string" ? month : undefined;
@@ -33,6 +48,7 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       });
     }
 
+    // Define the aggregation pipeline
     const pipeline: any[] = [
       {
         $lookup: {
@@ -70,7 +86,24 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       },
     ];
 
-    // If episcopalArea is provided, add it to the match stage
+    // Restrict data based on user role
+    if (req.user?.role === "annual") {
+      pipeline.push({
+        $match: {
+          "district.annualConference._id": req.user.annual,
+        },
+      });
+    }
+
+    if (req.user?.role === "district") {
+      pipeline.push({
+        $match: {
+          "district._id": req.user.district,
+        },
+      });
+    }
+
+    // Add episcopalArea filter if provided
     if (episcopalArea) {
       pipeline.push({
         $match: {
@@ -79,7 +112,7 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       });
     }
 
-    // If annualConference is provided, add it to the match stage
+    // Add annualConference filter if provided
     if (annualConference) {
       pipeline.push({
         $match: {
@@ -90,7 +123,7 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       });
     }
 
-    // If district is provided, add it to the match stage
+    // Add district filter if provided
     if (district) {
       pipeline.push({
         $match: {
@@ -99,7 +132,7 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       });
     }
 
-    // If search is provided, add it to the match stage
+    // Add search filter if provided
     if (search) {
       pipeline.push({
         $match: {
@@ -108,11 +141,9 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       });
     }
 
-    // If month is provided, filter by anniversaryDate month
+    // Add month filter if provided
     if (monthStr) {
-      // Convert month to integer (1-based)
       const monthInt = parseInt(monthStr, 10);
-
       pipeline.push({
         $match: {
           $expr: {
@@ -122,15 +153,38 @@ export const getAllLocalChurch = async (req: Request, res: Response) => {
       });
     }
 
-    // Perform sorting if needed
+    // Add sorting
     pipeline.push({
       $sort: { name: 1 },
     });
 
+    // Add pagination
+    pipeline.push({ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum });
+
     // Execute the aggregation pipeline
     const localChurches = await Local.aggregate(pipeline);
 
-    res.status(200).json({ success: true, data: localChurches });
+    // Get total count for pagination metadata
+    const totalCountPipeline = pipeline.filter(
+      (stage) => !("$skip" in stage || "$limit" in stage)
+    );
+    const totalCount = await Local.aggregate([
+      ...totalCountPipeline,
+      { $count: "total" },
+    ]);
+
+    const count = totalCount[0]?.total || 0;
+
+    res.status(200).json({
+      success: true,
+      data: localChurches,
+      meta: {
+        total: count,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
+      },
+    });
   } catch (err) {
     handleError(res, err, "An error occurred while getting all local churches");
   }

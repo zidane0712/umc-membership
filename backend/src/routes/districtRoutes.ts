@@ -24,17 +24,19 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(authorize(["admin"]), asyncHandler(getAllDistrict))
+  .get(authorize(["admin", "annual"], true), asyncHandler(getAllDistrict))
   .post(
-    authorize(["admin"]),
+    authorize(["admin"], true),
     validate(createDistrictSchema),
     validateAnnualConference,
     asyncHandler(createDistrict)
   );
 
+// Route for annual
+
 router
   .route("/:id")
-  .get(authorize(["admin"]), asyncHandler(getDistrictById))
+  .get(authorize(["admin", "annual"], true), asyncHandler(getDistrictById))
   .put(
     authorize(["admin"]),
     validate(updateDistrictSchema),

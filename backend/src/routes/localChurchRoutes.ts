@@ -26,9 +26,12 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(authorize(["admin"]), asyncHandler(getAllLocalChurch))
+  .get(
+    authorize(["admin", "annual", "district"], true),
+    asyncHandler(getAllLocalChurch)
+  )
   .post(
-    authorize(["admin"]),
+    authorize(["admin"], true),
     validate(createLocalChurchSchema),
     validateDistrictConference,
     validateAnnualConference,
@@ -37,11 +40,17 @@ router
 
 router
   .route("/anniversaries")
-  .get(authorize(["admin"]), asyncHandler(getAnniversariesByMonth));
+  .get(
+    authorize(["admin", "annual", "district"], true),
+    asyncHandler(getAnniversariesByMonth)
+  );
 
 router
   .route("/:id")
-  .get(authorize(["admin"]), asyncHandler(getLocalChurchById))
+  .get(
+    authorize(["admin", "annual", "district"], true),
+    asyncHandler(getLocalChurchById)
+  )
   .put(
     authorize(["admin"]),
     validate(updateLocalChurchSchema),
