@@ -10,6 +10,16 @@ import Annual from "../models/Annual";
 import Counter from "../models/Counter";
 import { AuthenticatedRequest } from "../middleware/authorize";
 
+interface PopulatedDistrict {
+  _id: Types.ObjectId;
+  name: string;
+  annualConference: {
+    _id: Types.ObjectId;
+    name: string;
+    episcopalArea: string;
+  };
+}
+
 // [CONTROLLERS]
 // Get all local church
 export const getAllLocalChurch = async (
@@ -230,10 +240,17 @@ export const createLocalChurch = async (req: Request, res: Response) => {
 };
 
 // Get a single local church by ID
-export const getLocalChurchById = async (req: Request, res: Response) => {
+export const getLocalChurchById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
-    const localChurch = await Local.findById(id).populate({
+
+    // Fetch the localChurch with populated district and annualConference fields
+    const localChurch = await Local.findById(id).populate<{
+      district: PopulatedDistrict;
+    }>({
       path: "district",
       select: "_id name annualConference",
       populate: {
@@ -242,12 +259,41 @@ export const getLocalChurchById = async (req: Request, res: Response) => {
       },
     });
 
+    // Check if the localChurch exists
     if (!localChurch) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Local Church not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Local Church not found",
+      });
     }
 
+    // Extract district for cleaner access
+    const district = localChurch.district;
+
+    // Role-based restriction: Check if the user is authorized to access this localChurch
+    if (
+      req.user?.role === "annual" &&
+      district.annualConference._id.toString() !== req.user.annual?.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied: You are not authorized to access this local church",
+      });
+    }
+
+    if (
+      req.user?.role === "district" &&
+      district._id.toString() !== req.user.district?.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied: You are not authorized to access this local church",
+      });
+    }
+
+    // Send the response with the local church data
     res.status(200).json({ success: true, data: localChurch });
   } catch (err) {
     handleError(res, err, "An error occurred while getting local church");
