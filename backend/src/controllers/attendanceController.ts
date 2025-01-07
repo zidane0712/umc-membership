@@ -6,13 +6,23 @@ import { Types } from "mongoose";
 import { handleError } from "../utils/handleError";
 import Attendance from "../models/Attendance";
 import Counter from "../models/Counter";
+import { AuthenticatedRequest } from "../middleware/authorize";
+import Local from "../models/Local";
 
 // [CONTROLLERS]
 // Get all attendance
-export const getAllAttendance = async (req: Request, res: Response) => {
+export const getAllAttendance = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const { tags, activityName, date } = req.query;
+    const { tags, activityName, date, page = 1, limit = 10 } = req.query;
 
+    // Convert pagination params to numbers
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
+
+    // Define the aggregation pipeline
     const pipeline: any[] = [
       {
         $match: {},
@@ -46,6 +56,15 @@ export const getAllAttendance = async (req: Request, res: Response) => {
       },
     ];
 
+    // Restrict data based on user role
+    if (req.user?.role === "local") {
+      pipeline.push({
+        $match: {
+          "localChurch._id": req.user.localChurch,
+        },
+      });
+    }
+
     // Filter by tags if provided
     if (tags) {
       const tagsArray = Array.isArray(tags) ? tags : [tags];
@@ -77,10 +96,30 @@ export const getAllAttendance = async (req: Request, res: Response) => {
       },
     });
 
+    // Add sorting
+    pipeline.push({
+      $sort: { name: 1 },
+    });
+
+    // Add pagination
+    pipeline.push({ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum });
+
+    // Execute the aggregation pipeline
     const attendanceResults = await Attendance.aggregate(pipeline);
 
     const totalAttendeesSum =
       attendanceResults.length > 0 ? attendanceResults[0].totalAttendeesSum : 0;
+
+    // Get total count of pagination metadata
+    const totalCountPipeline = pipeline.filter(
+      (stage) => !("$skip" in stage || "$limit" in stage)
+    );
+    const totalCount = await Attendance.aggregate([
+      ...totalCountPipeline,
+      { $count: "total" },
+    ]);
+
+    const count = totalCount[0]?.total || 0;
 
     res.status(200).json({
       success: true,
@@ -88,6 +127,12 @@ export const getAllAttendance = async (req: Request, res: Response) => {
       data: attendanceResults.length > 0 ? attendanceResults[0].records : [],
       count:
         attendanceResults.length > 0 ? attendanceResults[0].records.length : 0,
+      meta: {
+        total: count,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
+      },
     });
   } catch (err) {
     handleError(res, err, "An error occurred while getting attendance.");
@@ -156,16 +201,33 @@ export const createAttendance = async (req: Request, res: Response) => {
 };
 
 // Get attendance by id
-export const getAttendanceById = async (req: Request, res: Response) => {
+export const getAttendanceById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
+
+    // Fetch the attendance
     const attendance = await Attendance.findById(id).populate(
       "localChurch",
-      "name"
+      "_id name"
     );
 
+    // Check if attendance exists
     if (!attendance) {
       return res.status(404).json({ message: "Attendance not found" });
+    }
+
+    // Role-based restriction: Check if the user is authorized to access
+    if (
+      req.user?.role === "local" &&
+      attendance.localChurch._id.toString() !== req.user.localChurch?.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: You are not authorized to access.",
+      });
     }
 
     res.status(200).json({ success: true, data: attendance });
@@ -183,6 +245,7 @@ export const updateAttendance = async (req: Request, res: Response) => {
   try {
     // Check if the attendance with the provide id exists
     const existingAttendanceById = await Attendance.findById(id);
+
     if (!existingAttendanceById) {
       return res.status(404).json({
         success: false,

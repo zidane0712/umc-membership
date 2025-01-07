@@ -24,7 +24,7 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(authorize(["local"]), asyncHandler(getAllAttendance))
+  .get(authorize(["admin", "local"], true), asyncHandler(getAllAttendance))
   .post(
     authorize(["local"]),
     validate(createAttendanceSchema),
@@ -34,7 +34,7 @@ router
 
 router
   .route("/:id")
-  .get(authorize(["local"]), asyncHandler(getAttendanceById))
+  .get(authorize(["admin", "local"], true), asyncHandler(getAttendanceById))
   .put(
     authorize(["local"]),
     validate(updateAttendanceSchema),
