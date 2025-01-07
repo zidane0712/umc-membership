@@ -17,10 +17,6 @@ export const loginUser = async (req: Request, res: Response) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(401).json({ message: "Invalid username" });
 
-    // Debug logs for password comparison
-    console.log("Entered Password:", password); // Plain text password entered by user
-    console.log("Stored Hashed Password:", user.password); // Hashed password from database
-
     const isMatch = await bcrypt.compare(password, user.password);
     console.log("Password match:", isMatch); // Debug result of password comparison
 
@@ -43,11 +39,41 @@ export const loginUser = async (req: Request, res: Response) => {
 // Gets all users
 export const getAllUser = async (req: Request, res: Response) => {
   try {
-    const users = await User.find();
+    const { page = 1, limit = 10, search } = req.query;
+
+    // Convert pagination params to numbers
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
+
+    // Build the search filter
+    const filter: any = {};
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Fetch users with pagination and filtering
+    const users = await User.find(filter)
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum);
+
+    // Get total count for pagination metadata
+    const totalCount = await User.countDocuments(filter);
+
+    // Calculate metadata
+    const meta = {
+      total: totalCount,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(totalCount / limitNum),
+    };
 
     return res.status(200).json({
       success: true,
       data: users,
+      meta,
     });
   } catch (err) {
     handleError(res, err, "An error occurred while getting all users");
@@ -65,13 +91,13 @@ export const createUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Password validation: at least 8 characters, one uppercase, one lowercase, one digit, and one special character
+    // Password validation: at least 6 characters, one uppercase, one lowercase, one digit, and one special character
     const passwordPattern =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
     if (!passwordPattern.test(password)) {
       return res.status(400).json({
         message:
-          "Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character.",
+          "Password must be at least 6 characters long and include an uppercase letter, lowercase letter, number, and special character.",
       });
     }
 
@@ -165,18 +191,32 @@ export const updateUser = async (req: Request, res: Response) => {
     const { username, email, password, role, localChurch, district, annual } =
       req.body;
 
-    // Check if there's another user with the same username and email address
-    const existingUser = await User.findOne({
-      username,
-      email,
-      _id: { $ne: id },
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: "A user with this username and email already exists",
+    // Check if there's another user with same username
+    if (username) {
+      const existingUsername = await User.findOne({
+        username,
+        _id: { $ne: id },
       });
+      if (existingUsername) {
+        return res.status(409).json({
+          success: false,
+          message: "A user with this username already exists.",
+        });
+      }
+    }
+
+    // Check if there's another user with same email
+    if (email) {
+      const existingEmail = await User.findOne({
+        email,
+        _id: { $ne: id },
+      });
+      if (existingEmail) {
+        return res.status(409).json({
+          success: false,
+          message: "A user with this email already exists.",
+        });
+      }
     }
 
     // Find the user by ID to update
@@ -186,6 +226,20 @@ export const updateUser = async (req: Request, res: Response) => {
         success: false,
         message: "User not found with the provided ID.",
       });
+    }
+
+    // Validate password: at least 6 characters, one uppercase, one lowercase, one digit, and one special character
+    if (password) {
+      const passwordPattern =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
+      if (!passwordPattern.test(password)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Password must be at least 6 characters long and include an uppercase letter, lowercase letter, number, and special character.",
+        });
+      }
+      user.password = password;
     }
 
     // Validate required fields based on the role
