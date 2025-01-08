@@ -9,7 +9,7 @@ import Log from "./Logs";
 enum Role {
   ADMIN = "admin",
   LOCAL = "local",
-  DISCTRICT = "district",
+  DISTRICT = "district",
   ANNUAL = "annual",
   NATIONAL = "national",
 }
@@ -50,7 +50,7 @@ const userSchema = new Schema<IUser>(
       type: Schema.Types.ObjectId,
       ref: "District",
       required: function (this: IUser) {
-        return this.role === Role.DISCTRICT;
+        return this.role === Role.DISTRICT;
       },
     },
     annual: {
@@ -100,7 +100,6 @@ userSchema.post("findOneAndUpdate", async function (doc) {
       collection: "User",
       documentId: doc._id,
       data: { prevData, newData: this.getUpdate() },
-      performedBy: this.getQuery()._id,
       timestamp: new Date(),
     });
   }

@@ -55,22 +55,28 @@ localSchema.pre("save", async function (next) {
     }
 });
 localSchema.post("save", async function (doc) {
+    const localId = doc === null || doc === void 0 ? void 0 : doc._id;
     await Logs_1.default.create({
         action: "created",
         collection: "Local",
-        documentId: doc._id,
+        documentId: localId,
         data: doc.toObject(),
         timestamp: new Date(),
     });
 });
 localSchema.post("findOneAndUpdate", async function (doc) {
-    await Logs_1.default.create({
-        action: "updated",
-        collection: "Local",
-        documentId: doc._id,
-        newData: doc.toObject(),
-        timestamp: new Date(),
-    });
+    if (doc) {
+        // Fetch previous data before update
+        const prevData = doc.toObject();
+        await Logs_1.default.create({
+            action: "updated",
+            collection: "Local",
+            documentId: doc._id,
+            data: { prevData, newData: this.getUpdate() },
+            performedBy: this.getQuery()._id,
+            timestamp: new Date(),
+        });
+    }
 });
 localSchema.post("findOneAndDelete", async function (doc) {
     if (doc) {
@@ -79,6 +85,7 @@ localSchema.post("findOneAndDelete", async function (doc) {
             collection: "Local",
             documentId: doc._id,
             data: doc.toObject(),
+            performedBy: this.getQuery()._id,
             timestamp: new Date(),
         });
     }

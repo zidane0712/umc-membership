@@ -44,22 +44,29 @@ const attendanceSchema = new mongoose_1.Schema({
 }, { timestamps: true });
 // [MIDDLEWARE]
 attendanceSchema.post("save", async function (doc) {
+    const attendanceId = doc === null || doc === void 0 ? void 0 : doc._id;
     await Logs_1.default.create({
         action: "created",
         collection: "Attendance",
-        documentId: doc._id,
+        documentId: attendanceId,
         data: doc.toObject(),
+        performedBy: doc._id,
         timestamp: new Date(),
     });
 });
 attendanceSchema.post("findOneAndUpdate", async function (doc) {
-    await Logs_1.default.create({
-        action: "updated",
-        collection: "Attendance",
-        documentId: doc._id,
-        newData: doc.toObject(),
-        timestamp: new Date(),
-    });
+    if (doc) {
+        // Fetch previous data before update
+        const prevData = doc.toObject();
+        await Logs_1.default.create({
+            action: "updated",
+            collection: "Attendance",
+            documentId: doc._id,
+            data: { prevData, newData: this.getUpdate() },
+            performedBy: this.getQuery()._id,
+            timestamp: new Date(),
+        });
+    }
 });
 attendanceSchema.post("findOneAndDelete", async function (doc) {
     if (doc) {
@@ -68,6 +75,7 @@ attendanceSchema.post("findOneAndDelete", async function (doc) {
             collection: "Attendance",
             documentId: doc._id,
             data: doc.toObject(),
+            performedBy: this.getQuery()._id,
             timestamp: new Date(),
         });
     }

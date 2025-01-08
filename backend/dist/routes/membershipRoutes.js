@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // [DEPENDECIES]
 const express_1 = __importDefault(require("express"));
-// [IMPORTS]
 const membershipValidator_1 = require("../validators/membershipValidator");
 const membershipController_1 = require("../controllers/membershipController");
 const errorHandler_1 = require("../middleware/errorHandler");

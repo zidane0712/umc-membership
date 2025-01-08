@@ -7,47 +7,49 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Global imports
 const mongoose_1 = require("mongoose");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+// Local imports
 const Logs_1 = __importDefault(require("./Logs"));
 // [ENUM]
 var Role;
 (function (Role) {
     Role["ADMIN"] = "admin";
     Role["LOCAL"] = "local";
-    Role["DISCTRICT"] = "district";
+    Role["DISTRICT"] = "district";
     Role["ANNUAL"] = "annual";
     Role["NATIONAL"] = "national";
 })(Role || (Role = {}));
 // [SCHEMA]
 const userSchema = new mongoose_1.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    username: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, required: true, unique: true, trim: true },
+    password: { type: String, required: true, trim: true },
     role: {
         type: String,
         enum: Object.values(Role),
         required: true,
     },
     localChurch: {
-        types: mongoose_1.Schema.Types.ObjectId,
+        type: mongoose_1.Schema.Types.ObjectId,
         ref: "Local",
         required: function () {
             return this.role === Role.LOCAL;
         },
     },
     district: {
-        types: mongoose_1.Schema.Types.ObjectId,
+        type: mongoose_1.Schema.Types.ObjectId,
         ref: "District",
         required: function () {
-            return this.role === Role.DISCTRICT;
+            return this.role === Role.DISTRICT;
         },
     },
     annual: {
-        types: mongoose_1.Schema.Types.ObjectId,
+        type: mongoose_1.Schema.Types.ObjectId,
         ref: "Annual",
         required: function () {
             return this.role === Role.ANNUAL;
         },
     },
+    customId: { type: String, unique: true },
 }, { timestamps: true });
 // [MIDDLEWARE]
 // Password hashing
@@ -59,7 +61,7 @@ userSchema.pre("save", async function (next) {
     user.password = await bcrypt_1.default.hash(user.password, salt);
     next();
 });
-// Logging middleware
+// Logging middleware for user creation
 userSchema.post("save", async function (doc) {
     await Logs_1.default.create({
         action: "created",
@@ -69,15 +71,22 @@ userSchema.post("save", async function (doc) {
         timestamp: new Date(),
     });
 });
+// Logging middleware for user updates
 userSchema.post("findOneAndUpdate", async function (doc) {
-    await Logs_1.default.create({
-        action: "updated",
-        collection: "User",
-        documentId: doc._id,
-        newData: doc.toObject(),
-        timestamp: new Date(),
-    });
+    console.log("User updated document:", doc);
+    if (doc) {
+        // Fetch previous data before update
+        const prevData = doc.toObject();
+        await Logs_1.default.create({
+            action: "updated",
+            collection: "User",
+            documentId: doc._id,
+            data: { prevData, newData: this.getUpdate() },
+            timestamp: new Date(),
+        });
+    }
 });
+// Logging middleware for user deletion
 userSchema.post("findOneAndDelete", async function (doc) {
     if (doc) {
         await Logs_1.default.create({

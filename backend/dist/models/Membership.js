@@ -204,22 +204,28 @@ membershipSchema.pre("save", async function (next) {
     next();
 });
 membershipSchema.post("save", async function (doc) {
+    const membershipId = doc === null || doc === void 0 ? void 0 : doc._id;
     await Logs_1.default.create({
         action: "created",
         collection: "Membership",
-        documentId: doc._id,
+        documentId: membershipId,
         data: doc.toObject(),
         timestamp: new Date(),
     });
 });
 membershipSchema.post("findOneAndUpdate", async function (doc) {
-    await Logs_1.default.create({
-        action: "updated",
-        collection: "Membership",
-        documentId: doc._id,
-        newData: doc.toObject(),
-        timestamp: new Date(),
-    });
+    if (doc) {
+        // Fetch previous data before update
+        const prevData = doc.toObject();
+        await Logs_1.default.create({
+            action: "updated",
+            collection: "Membership",
+            documentId: doc._id,
+            data: { prevData, newData: this.getUpdate() },
+            performedBy: this.getQuery()._id,
+            timestamp: new Date(),
+        });
+    }
 });
 membershipSchema.post("findOneAndDelete", async function (doc) {
     if (doc) {
@@ -228,6 +234,7 @@ membershipSchema.post("findOneAndDelete", async function (doc) {
             collection: "Membership",
             documentId: doc._id,
             data: doc.toObject(),
+            performedBy: this.getQuery()._id,
             timestamp: new Date(),
         });
     }

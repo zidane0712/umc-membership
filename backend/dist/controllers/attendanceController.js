@@ -11,8 +11,13 @@ const Counter_1 = __importDefault(require("../models/Counter"));
 // [CONTROLLERS]
 // Get all attendance
 const getAllAttendance = async (req, res) => {
+    var _a, _b;
     try {
-        const { tags, activityName, date } = req.query;
+        const { tags, activityName, date, page = 1, limit = 10 } = req.query;
+        // Convert pagination params to numbers
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        // Define the aggregation pipeline
         const pipeline = [
             {
                 $match: {},
@@ -45,6 +50,14 @@ const getAllAttendance = async (req, res) => {
                 },
             },
         ];
+        // Restrict data based on user role
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === "local") {
+            pipeline.push({
+                $match: {
+                    "localChurch._id": req.user.localChurch,
+                },
+            });
+        }
         // Filter by tags if provided
         if (tags) {
             const tagsArray = Array.isArray(tags) ? tags : [tags];
@@ -72,13 +85,33 @@ const getAllAttendance = async (req, res) => {
                 records: { $push: "$$ROOT" },
             },
         });
+        // Add sorting
+        pipeline.push({
+            $sort: { name: 1 },
+        });
+        // Add pagination
+        pipeline.push({ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum });
+        // Execute the aggregation pipeline
         const attendanceResults = await Attendance_1.default.aggregate(pipeline);
         const totalAttendeesSum = attendanceResults.length > 0 ? attendanceResults[0].totalAttendeesSum : 0;
+        // Get total count of pagination metadata
+        const totalCountPipeline = pipeline.filter((stage) => !("$skip" in stage || "$limit" in stage));
+        const totalCount = await Attendance_1.default.aggregate([
+            ...totalCountPipeline,
+            { $count: "total" },
+        ]);
+        const count = ((_b = totalCount[0]) === null || _b === void 0 ? void 0 : _b.total) || 0;
         res.status(200).json({
             success: true,
             totalAttendeesSum,
             data: attendanceResults.length > 0 ? attendanceResults[0].records : [],
             count: attendanceResults.length > 0 ? attendanceResults[0].records.length : 0,
+            meta: {
+                total: count,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(count / limitNum),
+            },
         });
     }
     catch (err) {
@@ -137,11 +170,22 @@ const createAttendance = async (req, res) => {
 exports.createAttendance = createAttendance;
 // Get attendance by id
 const getAttendanceById = async (req, res) => {
+    var _a, _b;
     try {
         const { id } = req.params;
-        const attendance = await Attendance_1.default.findById(id).populate("localChurch", "name");
+        // Fetch the attendance
+        const attendance = await Attendance_1.default.findById(id).populate("localChurch", "_id name");
+        // Check if attendance exists
         if (!attendance) {
             return res.status(404).json({ message: "Attendance not found" });
+        }
+        // Role-based restriction: Check if the user is authorized to access
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === "local" &&
+            attendance.localChurch._id.toString() !== ((_b = req.user.localChurch) === null || _b === void 0 ? void 0 : _b.toString())) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied: You are not authorized to access.",
+            });
         }
         res.status(200).json({ success: true, data: attendance });
     }

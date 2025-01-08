@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // [DEPENDENCIES]
 const express_1 = __importDefault(require("express"));
 // [IMPORTS]
+const authorize_1 = require("../middleware/authorize");
 const annualValidator_1 = require("../validators/annualValidator");
 const annualController_1 = require("../controllers/annualController");
 const errorHandler_1 = require("../middleware/errorHandler");
@@ -16,13 +17,13 @@ const router = express_1.default.Router();
 // [ROUTES]
 router
     .route("/")
-    .get((0, asyncHandler_1.default)(annualController_1.getAllAnnual))
-    .post((0, validate_1.validate)(annualValidator_1.createAnnualSchema), (0, asyncHandler_1.default)(annualController_1.createAnnual));
+    .get((0, authorize_1.authorize)(["admin"], true), (0, asyncHandler_1.default)(annualController_1.getAllAnnual))
+    .post((0, authorize_1.authorize)(["admin"], true), (0, validate_1.validate)(annualValidator_1.createAnnualSchema), (0, asyncHandler_1.default)(annualController_1.createAnnual));
 router
     .route("/:id")
-    .get((0, asyncHandler_1.default)(annualController_1.getAnnualById))
-    .put((0, validate_1.validate)(annualValidator_1.updateAnnualSchema), (0, asyncHandler_1.default)(annualController_1.updateAnnual))
-    .delete((0, asyncHandler_1.default)(annualController_1.deleteAnnual));
+    .get((0, authorize_1.authorize)(["admin"], true), (0, asyncHandler_1.default)(annualController_1.getAnnualById))
+    .put((0, authorize_1.authorize)(["admin"], true), (0, validate_1.validate)(annualValidator_1.updateAnnualSchema), (0, asyncHandler_1.default)(annualController_1.updateAnnual))
+    .delete((0, authorize_1.authorize)(["admin"]), (0, asyncHandler_1.default)(annualController_1.deleteAnnual));
 router.use(errorHandler_1.errorHandler);
 // [EXPORT]
 exports.default = router;

@@ -13,8 +13,12 @@ const Counter_1 = __importDefault(require("../models/Counter"));
 // [CONTROLLERS]
 // Get all local church
 const getAllLocalChurch = async (req, res) => {
+    var _a, _b, _c;
     try {
-        const { episcopalArea, annualConference, district, search, month } = req.query;
+        const { episcopalArea, annualConference, district, search, month, page = 1, limit = 10, } = req.query;
+        // Convert pagination params to numbers
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
         // Ensure month is a string before validation
         const monthStr = typeof month === "string" ? month : undefined;
         // Validate month parameter
@@ -27,6 +31,7 @@ const getAllLocalChurch = async (req, res) => {
                 message: "Invalid month format. Please provide a two-digit month between '01' and '12'.",
             });
         }
+        // Define the aggregation pipeline
         const pipeline = [
             {
                 $lookup: {
@@ -63,7 +68,22 @@ const getAllLocalChurch = async (req, res) => {
                 },
             },
         ];
-        // If episcopalArea is provided, add it to the match stage
+        // Restrict data based on user role
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === "annual") {
+            pipeline.push({
+                $match: {
+                    "district.annualConference._id": req.user.annual,
+                },
+            });
+        }
+        if (((_b = req.user) === null || _b === void 0 ? void 0 : _b.role) === "district") {
+            pipeline.push({
+                $match: {
+                    "district._id": req.user.district,
+                },
+            });
+        }
+        // Add episcopalArea filter if provided
         if (episcopalArea) {
             pipeline.push({
                 $match: {
@@ -71,7 +91,7 @@ const getAllLocalChurch = async (req, res) => {
                 },
             });
         }
-        // If annualConference is provided, add it to the match stage
+        // Add annualConference filter if provided
         if (annualConference) {
             pipeline.push({
                 $match: {
@@ -79,7 +99,7 @@ const getAllLocalChurch = async (req, res) => {
                 },
             });
         }
-        // If district is provided, add it to the match stage
+        // Add district filter if provided
         if (district) {
             pipeline.push({
                 $match: {
@@ -87,7 +107,7 @@ const getAllLocalChurch = async (req, res) => {
                 },
             });
         }
-        // If search is provided, add it to the match stage
+        // Add search filter if provided
         if (search) {
             pipeline.push({
                 $match: {
@@ -95,9 +115,8 @@ const getAllLocalChurch = async (req, res) => {
                 },
             });
         }
-        // If month is provided, filter by anniversaryDate month
+        // Add month filter if provided
         if (monthStr) {
-            // Convert month to integer (1-based)
             const monthInt = parseInt(monthStr, 10);
             pipeline.push({
                 $match: {
@@ -107,13 +126,31 @@ const getAllLocalChurch = async (req, res) => {
                 },
             });
         }
-        // Perform sorting if needed
+        // Add sorting
         pipeline.push({
             $sort: { name: 1 },
         });
+        // Add pagination
+        pipeline.push({ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum });
         // Execute the aggregation pipeline
         const localChurches = await Local_1.default.aggregate(pipeline);
-        res.status(200).json({ success: true, data: localChurches });
+        // Get total count for pagination metadata
+        const totalCountPipeline = pipeline.filter((stage) => !("$skip" in stage || "$limit" in stage));
+        const totalCount = await Local_1.default.aggregate([
+            ...totalCountPipeline,
+            { $count: "total" },
+        ]);
+        const count = ((_c = totalCount[0]) === null || _c === void 0 ? void 0 : _c.total) || 0;
+        res.status(200).json({
+            success: true,
+            data: localChurches,
+            meta: {
+                total: count,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(count / limitNum),
+            },
+        });
     }
     catch (err) {
         (0, handleError_1.handleError)(res, err, "An error occurred while getting all local churches");
@@ -151,8 +188,10 @@ const createLocalChurch = async (req, res) => {
 exports.createLocalChurch = createLocalChurch;
 // Get a single local church by ID
 const getLocalChurchById = async (req, res) => {
+    var _a, _b, _c, _d;
     try {
         const { id } = req.params;
+        // Fetch the localChurch with populated district and annualConference fields
         const localChurch = await Local_1.default.findById(id).populate({
             path: "district",
             select: "_id name annualConference",
@@ -161,11 +200,31 @@ const getLocalChurchById = async (req, res) => {
                 select: "_id name episcopalArea",
             },
         });
+        // Check if the localChurch exists
         if (!localChurch) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Local Church not found" });
+            return res.status(404).json({
+                success: false,
+                message: "Local Church not found",
+            });
         }
+        // Extract district for cleaner access
+        const district = localChurch.district;
+        // Role-based restriction: Check if the user is authorized to access this localChurch
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === "annual" &&
+            district.annualConference._id.toString() !== ((_b = req.user.annual) === null || _b === void 0 ? void 0 : _b.toString())) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied: You are not authorized to access this local church",
+            });
+        }
+        if (((_c = req.user) === null || _c === void 0 ? void 0 : _c.role) === "district" &&
+            district._id.toString() !== ((_d = req.user.district) === null || _d === void 0 ? void 0 : _d.toString())) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied: You are not authorized to access this local church",
+            });
+        }
+        // Send the response with the local church data
         res.status(200).json({ success: true, data: localChurch });
     }
     catch (err) {

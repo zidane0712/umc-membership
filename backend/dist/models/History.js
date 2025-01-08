@@ -51,22 +51,28 @@ const historySchema = new mongoose_1.Schema({
 }, { timestamps: true });
 // [MIDDLEWARE]
 historySchema.post("save", async function (doc) {
+    const historyId = doc === null || doc === void 0 ? void 0 : doc._id;
     await Logs_1.default.create({
         action: "created",
         collection: "History",
-        documentId: doc._id,
+        documentId: historyId,
         data: doc.toObject(),
         timestamp: new Date(),
     });
 });
 historySchema.post("findOneAndUpdate", async function (doc) {
-    await Logs_1.default.create({
-        action: "updated",
-        collection: "History",
-        documentId: doc._id,
-        newData: doc.toObject(),
-        timestamp: new Date(),
-    });
+    if (doc) {
+        // Fetch previous data before update
+        const prevData = doc.toObject();
+        await Logs_1.default.create({
+            action: "updated",
+            collection: "History",
+            documentId: doc._id,
+            data: { prevData, newData: this.getUpdate() },
+            performedBy: this.getQuery()._id,
+            timestamp: new Date(),
+        });
+    }
 });
 historySchema.post("findOneAndDelete", async function (doc) {
     if (doc) {
@@ -75,6 +81,7 @@ historySchema.post("findOneAndDelete", async function (doc) {
             collection: "History",
             documentId: doc._id,
             data: doc.toObject(),
+            performedBy: this.getQuery()._id,
             timestamp: new Date(),
         });
     }

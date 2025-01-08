@@ -22,6 +22,7 @@ const attendanceRoutes_1 = __importDefault(require("./routes/attendanceRoutes"))
 const historyRoutes_1 = __importDefault(require("./routes/historyRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const logRoutes_1 = __importDefault(require("./routes/logRoutes"));
+const initialUser_1 = require("./utils/initialUser");
 // [APP CONFIGURATION]
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -32,7 +33,11 @@ app.use(express_1.default.urlencoded({ extended: true })); // To parse URL-encod
 // [MONGOOSE DB CONNECTION]
 mongoose_1.default
     .connect(process.env.MONGO_URI)
-    .then(() => console.log("Connection open"))
+    .then(async () => {
+    console.log("Connection open");
+    // Create the initial admin user
+    await (0, initialUser_1.createInitialAdmin)();
+})
     .catch((err) => {
     console.log("Connection error");
     console.log(err);

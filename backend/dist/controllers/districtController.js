@@ -12,8 +12,12 @@ const Counter_1 = __importDefault(require("../models/Counter"));
 // [CONTROLLERS]
 // Gets all district
 const getAllDistrict = async (req, res) => {
+    var _a, _b;
     try {
-        const { episcopalArea, search } = req.query;
+        const { episcopalArea, search, page = 1, limit = 10 } = req.query;
+        // Convert pagination params to numbers
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
         // Define the aggregation pipeline
         const pipeline = [
             {
@@ -31,12 +35,21 @@ const getAllDistrict = async (req, res) => {
                 $project: {
                     name: 1,
                     customId: 1,
+                    "annualConference._id": 1,
                     "annualConference.name": 1,
                     "annualConference.episcopalArea": 1,
                 },
             },
         ];
-        // If episcopalArea is provided, add it to the match stage
+        // Restrict data based on user role
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === "annual") {
+            pipeline.push({
+                $match: {
+                    "annualConference._id": req.user.annual,
+                },
+            });
+        }
+        // Add episcopalArea filter if provided
         if (episcopalArea) {
             pipeline.push({
                 $match: {
@@ -44,7 +57,7 @@ const getAllDistrict = async (req, res) => {
                 },
             });
         }
-        // If search is provided, add it to the match stage
+        // Add search filter if provided
         if (search) {
             pipeline.push({
                 $match: {
@@ -52,13 +65,31 @@ const getAllDistrict = async (req, res) => {
                 },
             });
         }
-        // Perform sorting if needed
+        // Add sorting
         pipeline.push({
             $sort: { name: 1 },
         });
+        // Add pagination
+        pipeline.push({ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum });
         // Execute the aggregation pipeline
         const districts = await District_1.default.aggregate(pipeline);
-        res.status(200).json({ success: true, data: districts });
+        // Get total count for pagination metadata
+        const totalCountPipeline = pipeline.filter((stage) => !("$skip" in stage || "$limit" in stage));
+        const totalCount = await District_1.default.aggregate([
+            ...totalCountPipeline,
+            { $count: "total" },
+        ]);
+        const count = ((_b = totalCount[0]) === null || _b === void 0 ? void 0 : _b.total) || 0;
+        res.status(200).json({
+            success: true,
+            data: districts,
+            meta: {
+                total: count,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(count / limitNum),
+            },
+        });
     }
     catch (err) {
         (0, handleError_1.handleError)(res, err, "An error occurred while getting all district conferences");
@@ -95,15 +126,30 @@ const createDistrict = async (req, res) => {
 exports.createDistrict = createDistrict;
 // Get a single district by ID
 const getDistrictById = async (req, res) => {
+    var _a, _b;
     try {
         const { id } = req.params;
+        // Fetch the district with the given ID and populate annualConference fields
         const district = await District_1.default.findById(id).populate("annualConference", "name episcopalArea");
+        // Check if the district exists
         if (!district) {
-            return res
-                .status(404)
-                .json({ success: false, message: "District not found" });
+            return res.status(404).json({
+                success: false,
+                message: "District not found",
+            });
         }
-        res.status(200).json({ success: true, data: district });
+        // Role-based restriction: Check if the user is authorized to access this district
+        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === "annual" &&
+            district.annualConference._id.toString() !== ((_b = req.user.annual) === null || _b === void 0 ? void 0 : _b.toString())) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied: You are not authorized to access this district",
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: district,
+        });
     }
     catch (err) {
         (0, handleError_1.handleError)(res, err, "An error occurred while getting district conference");

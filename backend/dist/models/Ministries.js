@@ -41,22 +41,29 @@ ministrySchema.pre("findOneAndDelete", async function (next) {
     }
 });
 ministrySchema.post("save", async function (doc) {
+    const ministryId = doc === null || doc === void 0 ? void 0 : doc._id;
     await Logs_1.default.create({
         action: "created",
         collection: "Ministry",
         documentId: doc._id,
         data: doc.toObject(),
+        performedBy: doc._id,
         timestamp: new Date(),
     });
 });
 ministrySchema.post("findOneAndUpdate", async function (doc) {
-    await Logs_1.default.create({
-        action: "updated",
-        collection: "Ministry",
-        documentId: doc._id,
-        newData: doc.toObject(),
-        timestamp: new Date(),
-    });
+    if (doc) {
+        // Fetch previous data before update
+        const prevData = doc.toObject();
+        await Logs_1.default.create({
+            action: "updated",
+            collection: "Ministry",
+            documentId: doc._id,
+            data: { prevData, newData: this.getUpdate() },
+            performedBy: this.getQuery()._id,
+            timestamp: new Date(),
+        });
+    }
 });
 ministrySchema.post("findOneAndDelete", async function (doc) {
     if (doc) {
@@ -65,6 +72,7 @@ ministrySchema.post("findOneAndDelete", async function (doc) {
             collection: "Ministry",
             documentId: doc._id,
             data: doc.toObject(),
+            performedBy: this.getQuery()._id,
             timestamp: new Date(),
         });
     }

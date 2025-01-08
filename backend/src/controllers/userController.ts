@@ -191,7 +191,7 @@ export const updateUser = async (req: Request, res: Response) => {
     const { username, email, password, role, localChurch, district, annual } =
       req.body;
 
-    // Check if there's another user with same username
+    // Check if there's another user with the same username
     if (username) {
       const existingUsername = await User.findOne({
         username,
@@ -205,7 +205,7 @@ export const updateUser = async (req: Request, res: Response) => {
       }
     }
 
-    // Check if there's another user with same email
+    // Check if there's another user with the same email
     if (email) {
       const existingEmail = await User.findOne({
         email,
@@ -219,16 +219,32 @@ export const updateUser = async (req: Request, res: Response) => {
       }
     }
 
-    // Find the user by ID to update
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found with the provided ID.",
-      });
+    // Update user fields based on the request body
+    const updateData: any = {};
+    if (username) updateData.username = username;
+    if (email) updateData.email = email;
+    if (role) updateData.role = role;
+
+    // Conditional assignment based on user role
+    if (role === "local") {
+      updateData.localChurch = localChurch;
+      updateData.district = undefined;
+      updateData.annual = undefined;
+    } else if (role === "district") {
+      updateData.district = district;
+      updateData.localChurch = undefined;
+      updateData.annual = undefined;
+    } else if (role === "annual") {
+      updateData.annual = annual;
+      updateData.localChurch = undefined;
+      updateData.district = undefined;
+    } else {
+      updateData.localChurch = undefined;
+      updateData.district = undefined;
+      updateData.annual = undefined;
     }
 
-    // Validate password: at least 6 characters, one uppercase, one lowercase, one digit, and one special character
+    // Validate password if provided
     if (password) {
       const passwordPattern =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
@@ -239,62 +255,26 @@ export const updateUser = async (req: Request, res: Response) => {
             "Password must be at least 6 characters long and include an uppercase letter, lowercase letter, number, and special character.",
         });
       }
-      user.password = password;
+      updateData.password = password;
     }
 
-    // Validate required fields based on the role
-    if (role === "local" && !localChurch) {
-      return res.status(400).json({
+    // Perform the update
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: id },
+      updateData,
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
         success: false,
-        message: "Local Church is required for users with the 'local' role.",
-      });
-    }
-    if (role === "district" && !district) {
-      return res.status(400).json({
-        success: false,
-        message: "District is required for users with the 'district' role.",
-      });
-    }
-    if (role === "annual" && !annual) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Annual Conference is required for users with the 'annual' role.",
+        message: "User not found with the provided ID.",
       });
     }
 
-    // Update user fields based on the request body
-    if (username) user.username = username;
-    if (email) user.email = email;
-    if (role) user.role = role;
-
-    // Conditional assignment based on user role
-    if (role === "local") {
-      user.localChurch = localChurch;
-      user.district = undefined;
-      user.annual = undefined;
-    } else if (role === "district") {
-      user.district = district;
-      user.localChurch = undefined;
-      user.annual = undefined;
-    } else if (role === "annual") {
-      user.annual = annual;
-      user.localChurch = undefined;
-      user.district = undefined;
-    } else {
-      user.localChurch = undefined;
-      user.district = undefined;
-      user.annual = undefined;
-    }
-
-    if (password) {
-      user.password = password;
-    }
-
-    // Save the updated user document
-    await user.save();
-
-    return res.status(200).json({ message: "User updated successfully", user });
+    return res
+      .status(200)
+      .json({ message: "User updated successfully", user: updatedUser });
   } catch (err) {
     console.error("Error updating user:", err);
     return res.status(500).json({ message: "Server error" });
