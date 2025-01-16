@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { handleError } from "../utils/handleError";
 import User from "../models/Users";
 import Counter from "../models/Counter";
+import { AuthenticatedRequest } from "../middleware/authorize";
 
 // [CONTROLLERS]
 // Login
@@ -14,26 +15,44 @@ export const loginUser = async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username }).lean();
     if (!user) return res.status(401).json({ message: "Invalid username" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log("Password match:", isMatch); // Debug result of password comparison
-
     if (!isMatch) return res.status(401).json({ message: "Invalid password" });
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        role: user.role,
+        username: user.username,
+        email: user.email,
+        customId: user.customId,
+        localChurch: user.localChurch,
+        district: user.district,
+        annual: user.annual,
+      },
       process.env.JWT_SECRET as string,
       {
-        expiresIn: "1h",
+        expiresIn: "3h",
       }
     );
 
-    return res.status(200).json({ token });
+    return res.status(200).json({ token, user });
   } catch (error) {
     return res.status(500).json({ message: "Server error" });
   }
+};
+
+// [USER CONTROLLER]
+export const getUserDetails = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  const user = req.user; // Since you're already attaching the user in the authorize middleware.
+  if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+  return res.status(200).json({ success: true, user });
 };
 
 // Gets all users
@@ -56,6 +75,7 @@ export const getAllUser = async (req: Request, res: Response) => {
 
     // Fetch users with pagination and filtering
     const users = await User.find(filter)
+      .select("-password")
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum);
 

@@ -14,6 +14,7 @@ import {
   getUserById,
   updateUser,
   deleteUser,
+  getUserDetails,
 } from "../controllers/userController";
 import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
@@ -39,6 +40,8 @@ router
     validateAnnualConference,
     asyncHandler(createUser)
   );
+
+router.route("/me").get(authorize(["admin"]), asyncHandler(getUserDetails));
 
 router
   .route("/:id")

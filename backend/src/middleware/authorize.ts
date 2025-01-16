@@ -1,5 +1,6 @@
 // [IMPORT]
 // Global import
+import { Types } from "mongoose";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User, { IUser } from "../models/Users";
@@ -16,63 +17,35 @@ interface DecodedToken {
 }
 
 // [FUNCTION]
+// [AUTHORIZATION MIDDLEWARE]
 export const authorize =
   (allowedRoles: string[], validateEntityId: boolean = false) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Extract token from the Authorization header
-      const token = req.headers.authorization?.split(" ")[1];
-      if (!token) {
-        console.log("No token found");
+      const token = req.headers.authorization?.split(" ")[1]; // Extract token
+      if (!token)
         return res.status(401).json({ message: "Access token is required" });
-      }
 
-      // Verify the token
+      // Decode the token
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET!
+        process.env.JWT_SECRET as string
       ) as DecodedToken;
 
-      // Find the user based on the token's payload
-      const user = await User.findById(decoded.id);
-      if (!user) {
-        console.log("User not found");
-        return res.status(403).json({ message: "Access denied" });
-      }
+      // Convert the decoded `id` to ObjectId
+      const userId = new Types.ObjectId(decoded.id);
 
-      // Check if the user's role is allowed
+      // Find the user based on the decoded ID
+      const user = await User.findById(userId);
+      if (!user) return res.status(403).json({ message: "User not found" });
+
+      // Ensure role validation
       if (!allowedRoles.includes(user.role)) {
-        console.log("User role not allowed:", user.role);
         return res.status(403).json({ message: "Access denied" });
       }
 
-      // Optional entity ID validation
-      if (validateEntityId && req.params.id) {
-        let entityId: string | undefined;
-
-        // Determine the entity ID based on the user's role
-        if (user.role === "local") entityId = user.localChurch?.toString();
-        if (user.role === "district") entityId = user.district?.toString();
-        if (user.role === "annual") entityId = user.annual?.toString();
-
-        // Deny access if the entity ID does not match
-        if (entityId && entityId !== req.params.id) {
-          console.log(
-            "Entity ID mismatch: expected",
-            entityId,
-            "but got",
-            req.params.id
-          );
-          return res
-            .status(403)
-            .json({ message: "Access denied: Entity ID mismatch" });
-        }
-      }
-
-      // Attach the user to the request object
+      // Attach the user object to req.user
       (req as AuthenticatedRequest).user = user;
-
-      // Proceed to the next middleware or route handler
       next();
     } catch (err) {
       console.error("Token error:", err);
