@@ -8,6 +8,7 @@ import { handleError } from "../utils/handleError";
 import User from "../models/Users";
 import Counter from "../models/Counter";
 import { AuthenticatedRequest } from "../middleware/authorize";
+import Log from "../models/Logs";
 
 // [CONTROLLERS]
 // Login
@@ -101,7 +102,7 @@ export const getAllUser = async (req: Request, res: Response) => {
 };
 
 // Create new users
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: AuthenticatedRequest, res: Response) => {
   const { username, email, password, role, localChurch, district, annual } =
     req.body;
 
@@ -176,6 +177,16 @@ export const createUser = async (req: Request, res: Response) => {
     // Save the new user
     await newUser.save();
 
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "User",
+      documentId: newUser._id,
+      data: newUser.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     return res
       .status(201)
       .json({ message: "User created successfully", user: newUser });
@@ -205,7 +216,7 @@ export const getUserById = async (req: Request, res: Response) => {
 };
 
 // Update a user
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { username, email, password, role, localChurch, district, annual } =
@@ -292,6 +303,16 @@ export const updateUser = async (req: Request, res: Response) => {
       });
     }
 
+    // Log the action
+    await Log.create({
+      action: "updated",
+      collection: "User",
+      documentId: updatedUser._id,
+      data: { prevData: updatedUser.toObject(), newData: updateData },
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     return res
       .status(200)
       .json({ message: "User updated successfully", user: updatedUser });
@@ -302,7 +323,7 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 // Delete user
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -326,6 +347,16 @@ export const deleteUser = async (req: Request, res: Response) => {
 
     // Proceed to delete the user if they are not an admin
     await user.deleteOne();
+
+    // Log the action
+    await Log.create({
+      action: "deleted",
+      collection: "User",
+      documentId: user._id,
+      data: user.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     return res.status(200).json({
       success: true,
