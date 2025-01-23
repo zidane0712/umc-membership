@@ -27,7 +27,7 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllMemberships))
+  .get(authorize(["admin"]), asyncHandler(getAllMemberships))
   .post(
     validate(createMembershipSchema),
     validateLocalChurch,

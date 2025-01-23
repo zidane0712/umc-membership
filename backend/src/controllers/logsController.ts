@@ -1,7 +1,7 @@
 // [IMPORT]
 // Global import
 import { Request, Response } from "express";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 // Local import
 import Logs from "../models/Logs";
 import { handleError } from "../utils/handleError";
@@ -87,7 +87,7 @@ export const getLocalLogs = async (
   try {
     const user = req.user;
 
-    if (!user) return res.status(401).json({ message: "Anauthorized" });
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
 
     const { action, collection, documentId, page = 1, limit = 10 } = req.query;
 
@@ -99,7 +99,7 @@ export const getLocalLogs = async (
     if (user.role === "local") {
       pipeline.push({
         $match: {
-          performedBy: new mongoose.Types.ObjectId(user.localChurch),
+          performedBy: new Types.ObjectId(user.localChurch),
         },
       });
     }

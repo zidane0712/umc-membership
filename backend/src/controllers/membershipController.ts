@@ -10,6 +10,8 @@ import District from "../models/District";
 import Local from "../models/Local";
 import Ministry from "../models/Ministries";
 import Counter from "../models/Counter";
+import Log from "../models/Logs";
+import { AuthenticatedRequest } from "../middleware/authorize";
 
 // [CONTROLLERS]
 // Gets all membership
@@ -30,19 +32,15 @@ export const getAllMemberships = async (req: Request, res: Response) => {
       age,
       organization,
       search,
+      page = 1,
+      limit = 10,
     } = req.query;
+
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
 
     const birthMonthInt =
       typeof birthMonth === "string" ? parseInt(birthMonth, 10) : undefined;
-    const minAge =
-      typeof req.query.minAge === "string"
-        ? parseInt(req.query.minAge, 10)
-        : undefined;
-    const maxAge =
-      typeof req.query.maxAge === "string"
-        ? parseInt(req.query.maxAge, 10)
-        : undefined;
-    const currentYear = new Date().getFullYear();
 
     const pipeline: any[] = [
       {
@@ -53,9 +51,7 @@ export const getAllMemberships = async (req: Request, res: Response) => {
           as: "localChurch",
         },
       },
-      {
-        $unwind: "$localChurch",
-      },
+      { $unwind: "$localChurch" },
       {
         $lookup: {
           from: "districts",
@@ -64,9 +60,7 @@ export const getAllMemberships = async (req: Request, res: Response) => {
           as: "localChurch.district",
         },
       },
-      {
-        $unwind: "$localChurch.district",
-      },
+      { $unwind: "$localChurch.district" },
       {
         $lookup: {
           from: "annuals",
@@ -75,9 +69,7 @@ export const getAllMemberships = async (req: Request, res: Response) => {
           as: "localChurch.district.annualConference",
         },
       },
-      {
-        $unwind: "$localChurch.district.annualConference",
-      },
+      { $unwind: "$localChurch.district.annualConference" },
       {
         $lookup: {
           from: "ministries",
@@ -86,168 +78,127 @@ export const getAllMemberships = async (req: Request, res: Response) => {
           as: "ministries",
         },
       },
-      {
-        $project: {
-          name: 1,
-          address: 1,
-          gender: 1,
-          civilStatus: 1,
-          birthday: 1,
-          contactNo: 1,
-          isBaptized: 1,
-          isConfirmed: 1,
-          birthMonth: 1,
-          baptized: 1,
-          baptism: 1,
-          confirmed: 1,
-          confirmation: 1,
-          father: 1,
-          mother: 1,
-          children: 1,
-          customId: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          membershipClassification: 1,
-          isActive: 1,
-          localChurch: {
-            _id: 1,
-            name: 1,
-            district: {
-              _id: 1,
-              name: 1,
-              annualConference: {
-                _id: 1,
-                name: 1,
-                episcopalArea: 1,
-              },
-            },
-          },
-          age: 1,
-          organization: 1,
-          ministries: {
-            _id: 1,
-            name: 1,
-          },
-        },
-      },
     ];
 
-    if (gender) {
-      pipeline.push({ $match: { gender } });
-    }
-
-    if (civilStatus) {
-      pipeline.push({ $match: { civilStatus } });
-    }
-
+    // Filters
+    const matchFilters: any = {};
+    if (gender) matchFilters.gender = gender;
+    if (civilStatus) matchFilters.civilStatus = civilStatus;
     if (birthMonthInt !== undefined) {
-      pipeline.push({
-        $match: {
-          $expr: {
-            $eq: [{ $month: "$birthday" }, birthMonthInt],
+      matchFilters.$expr = { $eq: [{ $month: "$birthday" }, birthMonthInt] };
+    }
+    if (baptized !== undefined) matchFilters.isBaptized = baptized === "true";
+    if (confirmed !== undefined)
+      matchFilters.isConfirmed = confirmed === "true";
+    if (membershipClassification) {
+      matchFilters.membershipClassification = membershipClassification;
+    }
+    if (isActive !== undefined) {
+      matchFilters.isActive = isActive === "true";
+    }
+    if (localChurch) {
+      matchFilters["localChurch._id"] = new Types.ObjectId(
+        localChurch as string
+      );
+    }
+    if (district) {
+      matchFilters["localChurch.district._id"] = new Types.ObjectId(
+        district as string
+      );
+    }
+    if (annualConference) {
+      matchFilters["localChurch.district.annualConference._id"] =
+        new Types.ObjectId(annualConference as string);
+    }
+    if (episcopalArea) {
+      matchFilters["localChurch.district.annualConference.episcopalArea"] =
+        episcopalArea;
+    }
+    if (age !== undefined) matchFilters.age = parseInt(age as string, 10);
+    if (organization) matchFilters.organization = organization;
+
+    // Search filters
+    if (search) {
+      matchFilters.$or = [
+        { "name.firstname": { $regex: search, $options: "i" } },
+        { "name.lastname": { $regex: search, $options: "i" } },
+        { customId: { $regex: search, $options: "i" } },
+        { "address.permanent.barangay": { $regex: search, $options: "i" } },
+        { "address.current.barangay": { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Match stage
+    pipeline.push({ $match: matchFilters });
+
+    // Pagination and sorting
+    pipeline.push(
+      { $sort: { createdAt: -1 } }, // Sort by creation date (descending)
+      { $skip: (pageNum - 1) * limitNum }, // Skip documents for the current page
+      { $limit: limitNum } // Limit documents to the page size
+    );
+
+    // Projection for returned fields
+    pipeline.push({
+      $project: {
+        name: 1,
+        address: 1,
+        gender: 1,
+        civilStatus: 1,
+        birthday: 1,
+        contactNo: 1,
+        isBaptized: 1,
+        isConfirmed: 1,
+        membershipClassification: 1,
+        isActive: 1,
+        localChurch: {
+          _id: 1,
+          name: 1,
+          district: {
+            _id: 1,
+            name: 1,
+            annualConference: {
+              _id: 1,
+              name: 1,
+              episcopalArea: 1,
+            },
           },
         },
-      });
-    }
+        age: 1,
+        organization: 1,
+        ministries: { _id: 1, name: 1 },
+        customId: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    });
 
-    if (baptized !== undefined) {
-      pipeline.push({
-        $match: {
-          isBaptized: baptized === "true",
-        },
-      });
-    }
-
-    if (confirmed !== undefined) {
-      pipeline.push({
-        $match: {
-          isConfirmed: confirmed === "true",
-        },
-      });
-    }
-
-    if (membershipClassification) {
-      pipeline.push({ $match: { membershipClassification } });
-    }
-
-    if (isActive !== undefined) {
-      const activeStatus = isActive === "true";
-
-      pipeline.push({ $match: { isActive: activeStatus } });
-    }
-
-    if (localChurch) {
-      pipeline.push({
-        $match: {
-          "localChurch._id": new Types.ObjectId(localChurch as string),
-        },
-      });
-    }
-
-    if (district) {
-      pipeline.push({
-        $match: {
-          "localChurch.district._id": new Types.ObjectId(district as string),
-        },
-      });
-    }
-
-    if (annualConference) {
-      pipeline.push({
-        $match: {
-          "localChurch.district.annualConference._id": new Types.ObjectId(
-            annualConference as string
-          ),
-        },
-      });
-    }
-
-    if (episcopalArea) {
-      pipeline.push({
-        $match: {
-          "localChurch.district.annualConference.episcopalArea": episcopalArea,
-        },
-      });
-    }
-
-    if (age !== undefined) {
-      const parsedAge = parseInt(age as string, 10);
-
-      pipeline.push({
-        $match: {
-          age: parsedAge,
-        },
-      });
-    }
-
-    if (organization) {
-      pipeline.push({ $match: { organization } });
-    }
-
-    if (search) {
-      pipeline.push({
-        $match: {
-          $or: [
-            { "name.firstname": { $regex: search, $options: "i" } },
-            { "name.lastname": { $regex: search, $options: "i" } },
-            { customId: { $regex: search, $options: "i" } },
-            { "address.permanent.barangay": { $regex: search, $options: "i" } },
-            { "address.current.barangay": { $regex: search, $options: "i" } },
-          ],
-        },
-      });
-    }
-
+    // Execute the pipeline
     const memberships = await Membership.aggregate(pipeline);
 
-    res.status(200).json({ success: true, data: memberships });
+    // Total count for pagination metadata
+    const totalMemberships = await Membership.countDocuments(matchFilters);
+
+    // Response metadata
+    const meta = {
+      total: totalMemberships,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(totalMemberships / limitNum),
+    };
+
+    // Return data and metadata
+    res.status(200).json({ success: true, data: memberships, meta });
   } catch (err) {
     handleError(res, err, "An error occurred while getting all memberships");
   }
 };
 
 // Create a new membership
-export const createMembership = async (req: Request, res: Response) => {
+export const createMembership = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { name, birthday, district, localChurch } = req.body;
 
   try {
@@ -284,6 +235,16 @@ export const createMembership = async (req: Request, res: Response) => {
     // If it doesn't exist, create a new membership
     const membership = new Membership({ ...req.body, customId });
     const newMembership = await membership.save();
+
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "Membership",
+      documentId: newMembership._id,
+      data: newMembership.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res.status(201).json(newMembership);
   } catch (err) {
@@ -323,7 +284,10 @@ export const getMemberById = async (req: Request, res: Response) => {
 };
 
 // Update a member by ID
-export const updateMember = async (req: Request, res: Response) => {
+export const updateMember = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const {
@@ -410,6 +374,16 @@ export const updateMember = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Membership not found" });
     }
 
+    // Log the action
+    await Log.create({
+      action: "updated",
+      collection: "Membership",
+      documentId: updateMembership._id,
+      data: { prevData: updateMembership.toObject() },
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(200).json(updateMembership);
   } catch (err) {
     handleError(res, err, "An error occurred while updating member");
@@ -417,17 +391,31 @@ export const updateMember = async (req: Request, res: Response) => {
 };
 
 // Delete a member
-export const deleteMember = async (req: Request, res: Response) => {
+export const deleteMember = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
 
-    const deletedMember = await Membership.findByIdAndDelete(id);
+    const deletedMember = await Membership.findById(id);
 
     if (!deletedMember) {
       return res
         .status(404)
         .json({ success: false, message: "Member not found" });
     }
+
+    await deletedMember.deleteOne();
+
+    await Log.create({
+      action: "deleted",
+      collection: "Membership",
+      documentId: deletedMember._id,
+      data: deletedMember.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res
       .status(200)
