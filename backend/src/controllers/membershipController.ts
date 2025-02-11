@@ -337,27 +337,40 @@ export const updateMember = async (
       confirmation,
     } = req.body;
 
+    const trimmedFirstname = name?.firstname.trim();
+    const trimmedMiddlename = name?.middlename.trim();
+    const trimmedLastName = name?.lastname.trim();
+
     // Check if there's another membership with same name, district, and annual conference
     const existingMembership = await Membership.findOne({
-      name,
+      name: {
+        firstname: trimmedFirstname,
+        middlename: trimmedMiddlename,
+        lastname: trimmedLastName,
+      },
       localChurch,
       district,
       annualConference,
       _id: { $ne: id },
     });
 
+    // Role-based access control: Ensure the localChurch in the body matches the logged-in user's localChurch
+    if (
+      req.user?.role === "local" &&
+      !new Types.ObjectId(localChurch).equals(req.user.localChurch)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied: You can only update memberships for your own local church.",
+      });
+    }
+
     if (existingMembership) {
       return res.status(409).json({
         success: false,
         message:
           "A membership with this name, localChurch, district, and annual conference already exists.",
-      });
-    }
-
-    if (!existingMembership) {
-      return res.status(404).json({
-        success: false,
-        message: "Membership not found with the provided ID.",
       });
     }
 
