@@ -268,7 +268,10 @@ export const createMembership = async (
 };
 
 // Get a single membership by ID
-export const getMemberById = async (req: Request, res: Response) => {
+export const getMemberById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const member = await Membership.findById(id)
@@ -290,6 +293,14 @@ export const getMemberById = async (req: Request, res: Response) => {
       return res
         .status(404)
         .json({ success: false, message: "Member not found" });
+    }
+
+    // Role-based access control
+    if (
+      req.user?.role === "local" &&
+      !member.localChurch._id.equals(req.user.localChurch)
+    ) {
+      return res.status(403).json({ success: false, message: "Access denied" });
     }
 
     res.status(200).json({ success: true, data: member });

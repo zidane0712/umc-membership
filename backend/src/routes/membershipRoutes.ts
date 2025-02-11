@@ -39,7 +39,7 @@ router
 
 router
   .route("/:id")
-  .get(asyncHandler(getMemberById))
+  .get(authorize(["admin", "local"]), asyncHandler(getMemberById))
   .put(
     validate(updateMembershipSchema),
     validateLocalChurch,
