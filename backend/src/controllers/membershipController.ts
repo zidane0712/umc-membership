@@ -449,12 +449,29 @@ export const deleteMember = async (
   try {
     const { id } = req.params;
 
-    const deletedMember = await Membership.findById(id);
+    const deletedMember = await Membership.findById(id).populate({
+      path: "localChurch",
+      select: "_id",
+    });
 
     if (!deletedMember) {
       return res
         .status(404)
         .json({ success: false, message: "Member not found" });
+    }
+
+    // Role-based access control
+    if (
+      req.user?.role === "local" &&
+      !deletedMember.localChurch._id.equals(req.user.localChurch)
+    ) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message:
+            "Access denied: You can only delete memberships for your own local church.",
+        });
     }
 
     await deletedMember.deleteOne();
