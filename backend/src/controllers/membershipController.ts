@@ -225,6 +225,18 @@ export const createMembership = async (
       });
     }
 
+    // Role-based access control: Ensure the localChurch in the body matches the logged-in user's localChurch
+    if (
+      req.user?.role === "local" &&
+      !new Types.ObjectId(localChurch).equals(req.user.localChurch)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied: You can only create memberships for your own local church.",
+      });
+    }
+
     // Check if a membership already exists with the same name, district, and local church
     const existingMembership = await Membership.findOne({
       name,
@@ -233,7 +245,7 @@ export const createMembership = async (
     if (existingMembership) {
       return res.status(409).json({
         success: false,
-        message: "Member already exists>",
+        message: "Member already exists",
       });
     }
 

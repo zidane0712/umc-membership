@@ -32,6 +32,7 @@ router
     asyncHandler(getAllMemberships)
   )
   .post(
+    authorize(["local"]),
     validate(createMembershipSchema),
     validateLocalChurch,
     asyncHandler(createMembership)
@@ -41,11 +42,12 @@ router
   .route("/:id")
   .get(authorize(["admin", "local"]), asyncHandler(getMemberById))
   .put(
+    authorize(["local"]),
     validate(updateMembershipSchema),
     validateLocalChurch,
     asyncHandler(updateMember)
   )
-  .delete(asyncHandler(deleteMember));
+  .delete(authorize(["local"]), asyncHandler(deleteMember));
 
 router
   .route("/:id/ministry")
