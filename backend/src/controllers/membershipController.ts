@@ -15,7 +15,10 @@ import { AuthenticatedRequest } from "../middleware/authorize";
 
 // [CONTROLLERS]
 // Gets all membership
-export const getAllMemberships = async (req: Request, res: Response) => {
+export const getAllMemberships = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const {
       gender,
@@ -117,6 +120,16 @@ export const getAllMemberships = async (req: Request, res: Response) => {
     if (age !== undefined) matchFilters.age = parseInt(age as string, 10);
     if (organization) matchFilters.organization = organization;
 
+    // Role-based filtering
+    if (req.user?.role === "annual") {
+      matchFilters["localChurch.district.annualConference._id"] =
+        req.user.annual;
+    } else if (req.user?.role === "district") {
+      matchFilters["localChurch.district._id"] = req.user.district;
+    } else if (req.user?.role === "local") {
+      matchFilters["localChurch._id"] = req.user.localChurch;
+    }
+
     // Search filters
     if (search) {
       matchFilters.$or = [
@@ -177,7 +190,9 @@ export const getAllMemberships = async (req: Request, res: Response) => {
     const memberships = await Membership.aggregate(pipeline);
 
     // Total count for pagination metadata
-    const totalMemberships = await Membership.countDocuments(matchFilters);
+    const countPipeline = [...pipeline.slice(0, -3), { $count: "total" }];
+    const countResult = await Membership.aggregate(countPipeline);
+    const totalMemberships = countResult.length > 0 ? countResult[0].total : 0;
 
     // Response metadata
     const meta = {
