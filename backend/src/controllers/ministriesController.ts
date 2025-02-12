@@ -202,16 +202,38 @@ export const updateMinistry = async (
 };
 
 // Delete a ministry
-export const deleteMinistry = async (req: Request, res: Response) => {
+export const deleteMinistry = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
-    const deleteMinistry = await Ministry.findByIdAndDelete(id);
+    const userLocalChurch = req.user?.localChurch;
 
-    if (!deleteMinistry) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Ministry not found" });
+    const ministry = await Ministry.findById(id);
+
+    if (!ministry) {
+      return res.status(404).json({ message: "Ministry not found" });
     }
+
+    if (!ministry.localChurch.equals(userLocalChurch)) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized access to local church",
+      });
+    }
+
+    await ministry.deleteOne();
+
+    // Log the action done
+    await Log.create({
+      action: "deleted",
+      collection: "Ministry",
+      documentId: ministry._id,
+      data: ministry.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res
       .status(200)
