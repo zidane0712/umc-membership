@@ -82,9 +82,14 @@ export const createMinistry = async (req: Request, res: Response) => {
 };
 
 // Get a single ministry by ID
-export const getMinistryById = async (req: Request, res: Response) => {
+export const getMinistryById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
+    const userLocalChurch = req.user?.localChurch;
+
     const ministry = await Ministry.findById(id)
       .populate("localChurch", "name")
       .populate("members", "name");
@@ -93,6 +98,13 @@ export const getMinistryById = async (req: Request, res: Response) => {
       return res
         .status(404)
         .json({ success: false, message: "Ministry not found" });
+    }
+
+    // Check if the ministry's local church matches the user's local church
+    if (!ministry.localChurch.equals(userLocalChurch)) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Unauthorized access to ministry" });
     }
 
     res.status(200).json({ success: true, data: ministry });
