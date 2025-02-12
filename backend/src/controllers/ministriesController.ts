@@ -8,26 +8,27 @@ import Membership from "../models/Membership";
 import Ministry from "../models/Ministries";
 import { handleError } from "../utils/handleError";
 import Counter from "../models/Counter";
+import { AuthenticatedRequest } from "../middleware/authorize";
 
 // [CONTROLLERS]
 
 // Gets all ministries
-export const getAllMinistry = async (req: Request, res: Response) => {
+export const getAllMinistry = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     // Extract query parameters from the request
-    const { name, localChurch } = req.query;
+    const { name } = req.query;
+
+    const userLocalChurch = req.user?.localChurch;
 
     // Create a filter object to hold the query conditions
-    const filter: any = {};
+    const filter: any = { localChurch: userLocalChurch };
 
     // If 'name' is provided, use a case-insensitive regular expression for searching
     if (name) {
       filter.name = { $regex: new RegExp(name as string, "i") };
-    }
-
-    // If 'localChurch' is provided, add it to the filter
-    if (localChurch) {
-      filter.localChurch = localChurch;
     }
 
     // Find ministries based on the filter and populate related fields
