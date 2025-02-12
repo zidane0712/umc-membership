@@ -19,14 +19,16 @@ import { errorHandler } from "../middleware/errorHandler";
 import asyncHandler from "../utils/asyncHandler";
 import { validate } from "../middleware/validate";
 import { validateLocalChurch } from "../middleware/validateLocalChurch";
+import { authorize } from "../middleware/authorize";
 
 const router = express.Router();
 
 // [ROUTES]
 router
   .route("/")
-  .get(asyncHandler(getAllMinistry))
+  .get(authorize(["local"]), asyncHandler(getAllMinistry))
   .post(
+    authorize(["local"]),
     validate(createMinistrySchema),
     validateLocalChurch,
     asyncHandler(createMinistry)
@@ -34,18 +36,19 @@ router
 
 router
   .route("/:id")
-  .get(asyncHandler(getMinistryById))
+  .get(authorize(["local"]), asyncHandler(getMinistryById))
   .put(
+    authorize(["local"]),
     validate(updateMinistrySchema),
     validateLocalChurch,
     asyncHandler(updateMinistry)
   )
-  .delete(asyncHandler(deleteMinistry));
+  .delete(authorize(["local"]), asyncHandler(deleteMinistry));
 
 router
   .route("/:id/members")
-  .put(asyncHandler(addMemberToMinistry))
-  .delete(asyncHandler(removeMembersFromMinistry));
+  .put(authorize(["local"]), asyncHandler(addMemberToMinistry))
+  .delete(authorize(["local"]), asyncHandler(removeMembersFromMinistry));
 
 router.use(errorHandler);
 
