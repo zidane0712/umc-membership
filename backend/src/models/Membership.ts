@@ -112,22 +112,18 @@ const membershipSchema = new Schema<IMembership>(
       type: String,
       enum: ["male", "female"],
       required: [true, "Gender is required"],
-      index: true,
     },
     civilStatus: {
       type: String,
       enum: ["single", "married", "separated", "widowed"],
       required: [true, "Civil status is required"],
-      index: true,
     },
     birthday: {
       type: Date,
       required: [true, "Birth date is required"],
-      index: true,
     },
     age: {
       type: Number,
-      index: true,
     },
     contactNo: {
       type: String,
@@ -139,11 +135,11 @@ const membershipSchema = new Schema<IMembership>(
         message: (props) => `${props.value} is not a valid cellphone number`,
       },
     },
-    isBaptized: { type: Boolean, default: false, index: true },
+    isBaptized: { type: Boolean, default: false },
     baptism: {
       type: baptismConfirmationSchema,
     },
-    isConfirmed: { type: Boolean, default: false, index: true },
+    isConfirmed: { type: Boolean, default: false },
     confirmation: {
       type: baptismConfirmationSchema,
     },
@@ -163,17 +159,14 @@ const membershipSchema = new Schema<IMembership>(
       type: String,
       enum: ["baptized", "professing", "affiliate", "associate", "constituent"],
       required: [true, "Membership classification is required"],
-      index: true,
     },
     isActive: {
       type: Boolean,
       default: false,
-      index: true,
     },
     organization: {
       type: String,
       enum: ["umm", "umwscs", "umyaf", "umyf", "umcf"],
-      index: true,
     },
     ministries: [
       {
@@ -185,7 +178,6 @@ const membershipSchema = new Schema<IMembership>(
       type: Schema.Types.ObjectId,
       ref: "Local",
       required: [true, "Local Church is required"],
-      index: true,
     },
     customId: { type: String, unique: true },
   },
@@ -252,48 +244,6 @@ membershipSchema.pre("save", async function (next) {
 
   next();
 });
-
-// membershipSchema.post("save", async function (doc) {
-//   const membershipId = doc?._id;
-//   await Log.create({
-//     action: "created",
-//     collection: "Membership",
-//     documentId: membershipId,
-//     data: doc.toObject(),
-//     timestamp: new Date(),
-//   });
-// });
-
-// membershipSchema.post("findOneAndUpdate", async function (doc) {
-//   if (doc) {
-//     // Fetch previous data before update
-//     const prevData = doc.toObject();
-
-//     await Log.create({
-//       action: "updated",
-//       collection: "Membership",
-//       documentId: doc._id,
-//       data: { prevData, newData: this.getUpdate() },
-//       performedBy: this.getQuery()._id,
-//       timestamp: new Date(),
-//     });
-//   }
-// });
-// membershipSchema.post("findOneAndDelete", async function (doc) {
-//   if (doc) {
-//     await Log.create({
-//       action: "deleted",
-//       collection: "Membership",
-//       documentId: doc._id,
-//       data: doc.toObject(),
-//       performedBy: this.getQuery()._id,
-//       timestamp: new Date(),
-//     });
-//   }
-// });
-
-// [INDEX]
-// Single use indexes
 
 membershipSchema.index({ gender: 1 });
 membershipSchema.index({ civilStatus: 1 });

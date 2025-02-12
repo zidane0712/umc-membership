@@ -24,7 +24,6 @@ const annualSchema = new Schema<IAnnual>(
       type: String,
       enum: ["bea", "dea", "mea"],
       required: [true, "Episcopal Area is required"],
-      index: true,
       trim: true,
     },
     customId: { type: String, unique: true },

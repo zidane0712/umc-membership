@@ -23,7 +23,6 @@ const districtSchema = new Schema<IDistrict>(
     annualConference: {
       type: Schema.Types.ObjectId,
       ref: "Annual",
-      index: true,
       required: [true, "Annual Conference is required"],
       trim: true,
     },
