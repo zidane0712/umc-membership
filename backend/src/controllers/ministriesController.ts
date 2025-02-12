@@ -9,6 +9,7 @@ import Ministry from "../models/Ministries";
 import { handleError } from "../utils/handleError";
 import Counter from "../models/Counter";
 import { AuthenticatedRequest } from "../middleware/authorize";
+import Log from "../models/Logs";
 
 // [CONTROLLERS]
 
@@ -43,10 +44,22 @@ export const getAllMinistry = async (
 };
 
 // Create a new ministry
-export const createMinistry = async (req: Request, res: Response) => {
-  const { name, localChurch } = req.body;
-
+export const createMinistry = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const { name, localChurch } = req.body;
+
+    const userLocalChurch = req.user?.localChurch;
+
+    if (!userLocalChurch?.equals(localChurch)) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized access to local church",
+      });
+    }
+
     // Manually check if ministry exists in the local church
     const existingMinistry = await Ministry.findOne({
       name,
@@ -74,6 +87,16 @@ export const createMinistry = async (req: Request, res: Response) => {
     // If it doesn't exist, create a new one
     const ministry = new Ministry({ ...req.body, customId });
     const newMinistry = await ministry.save();
+
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "Ministry",
+      documentId: newMinistry._id,
+      data: newMinistry.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res.status(201).json(newMinistry);
   } catch (err) {
@@ -114,10 +137,23 @@ export const getMinistryById = async (
 };
 
 // Update a ministry by ID
-export const updateMinistry = async (req: Request, res: Response) => {
+export const updateMinistry = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const { name, localChurch } = req.body;
+
+    const userLocalChurch = req.user?.localChurch;
+
+    // Check if the input localChurch matches the user's localChurch
+    if (!userLocalChurch?.equals(localChurch)) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized access to local church",
+      });
+    }
 
     const existingMinistry = await Ministry.findOne({
       name,
@@ -129,13 +165,6 @@ export const updateMinistry = async (req: Request, res: Response) => {
       return res.status(409).json({
         success: false,
         message: "A ministry with this name in the local church already exists",
-      });
-    }
-
-    if (!existingMinistry) {
-      return res.status(404).json({
-        success: false,
-        message: "Ministry not found with provided id",
       });
     }
 
@@ -155,6 +184,16 @@ export const updateMinistry = async (req: Request, res: Response) => {
     if (!updateMinistry) {
       return res.status(404).json({ message: "Ministry not found" });
     }
+
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Ministry",
+      documentId: updateMinistry._id,
+      data: { prevData: updateMinistry.toObject(), newData: req.body },
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res.status(200).json(updateMinistry);
   } catch (err) {
