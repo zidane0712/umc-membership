@@ -51,8 +51,8 @@ router
 
 router
   .route("/:id/ministry")
-  .put(asyncHandler(addMinistriesToMember))
-  .delete(asyncHandler(removeMinistriesFromMember));
+  .put(authorize(["local"]), asyncHandler(addMinistriesToMember))
+  .delete(authorize(["local"]), asyncHandler(removeMinistriesFromMember));
 
 router.use(errorHandler);
 

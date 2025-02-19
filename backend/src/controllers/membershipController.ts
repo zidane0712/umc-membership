@@ -465,13 +465,11 @@ export const deleteMember = async (
       req.user?.role === "local" &&
       !deletedMember.localChurch._id.equals(req.user.localChurch)
     ) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message:
-            "Access denied: You can only delete memberships for your own local church.",
-        });
+      return res.status(403).json({
+        success: false,
+        message:
+          "Access denied: You can only delete memberships for your own local church.",
+      });
     }
 
     await deletedMember.deleteOne();
@@ -494,15 +492,29 @@ export const deleteMember = async (
 };
 
 // Add multiple ministries to a member
-export const addMinistriesToMember = async (req: Request, res: Response) => {
+export const addMinistriesToMember = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const { ministryIds }: { ministryIds: Types.ObjectId[] } = req.body;
+
+    const userLocalChurch = req.user?.localChurch;
 
     // Find the member by ID
     const member = await Membership.findById(id);
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
+    }
+
+    // Ensure the member belongs to the same local church as the logged-in user
+    if (!member.localChurch.equals(userLocalChurch)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: Member does not belong to your local church",
+      });
     }
 
     // Initialize ministries array if undefined
@@ -557,6 +569,19 @@ export const addMinistriesToMember = async (req: Request, res: Response) => {
       });
       await Promise.all(updates);
 
+      // Log the action done
+      await Log.create({
+        action: "updated",
+        collection: "Membership",
+        documentId: member._id,
+        data: {
+          prevData: member.toObject(),
+          newData: { ministries: newMinistryIds },
+        },
+        performedBy: req.user?._id,
+        timestamp: new Date(),
+      });
+
       res.status(200).json({
         success: true,
         message: "Ministries successfully added to member",
@@ -577,17 +602,28 @@ export const addMinistriesToMember = async (req: Request, res: Response) => {
 
 // Remove multiple ministries from a member
 export const removeMinistriesFromMember = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
     const { id } = req.params;
     const { ministryIds }: { ministryIds: Types.ObjectId[] } = req.body;
 
+    const userLocalChurch = req.user?.localChurch;
+
     // Find the member by ID
     const member = await Membership.findById(id);
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
+    }
+
+    // Ensure the member belongs to the same local church as the logged-in user
+    if (!member.localChurch.equals(userLocalChurch)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: Member does not belong to your local church",
+      });
     }
 
     // Initialize ministries array if undefined
@@ -631,6 +667,19 @@ export const removeMinistriesFromMember = async (
         }
       });
       await Promise.all(updates);
+
+      // Log the action done
+      await Log.create({
+        action: "updated",
+        collection: "Membership",
+        documentId: member._id,
+        data: {
+          prevData: member.toObject(),
+          newData: { ministries: ministriesToRemove },
+        },
+        performedBy: req.user?._id,
+        timestamp: new Date(),
+      });
 
       res.status(200).json({
         success: true,

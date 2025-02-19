@@ -244,15 +244,29 @@ export const deleteMinistry = async (
 };
 
 // Add multiple members to a ministry
-export const addMemberToMinistry = async (req: Request, res: Response) => {
+export const addMemberToMinistry = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const { memberIds }: { memberIds: mongoose.Types.ObjectId[] } = req.body;
+
+    const userLocalChurch = req.user?.localChurch;
 
     // Find the ministry by Id and initialize the members array if undefined
     const ministry = await Ministry.findById(id);
     if (!ministry) {
       return res.status(404).json({ message: "Ministry not found" });
+    }
+
+    // Ensure the ministry belongs to the same local church as the logged-in user
+    if (!ministry.localChurch.equals(userLocalChurch)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: Ministry does not belong to your local church",
+      });
     }
 
     ministry.members = ministry.members || [];
@@ -298,6 +312,19 @@ export const addMemberToMinistry = async (req: Request, res: Response) => {
 
     await Promise.all(updates);
 
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Ministry",
+      documentId: ministry._id,
+      data: {
+        prevData: ministry.toObject(),
+        newData: { members: newMemberIds },
+      },
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(200).json({
       success: true,
       message: "Members successfully added to Ministry",
@@ -313,17 +340,28 @@ export const addMemberToMinistry = async (req: Request, res: Response) => {
 
 // Remove members from a ministry
 export const removeMembersFromMinistry = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
     const { id } = req.params;
     const { memberIds }: { memberIds: mongoose.Types.ObjectId[] } = req.body;
 
+    const userLocalChurch = req.user?.localChurch;
+
     // Find the ministry by Id and initialize the members array if undefined
     const ministry = await Ministry.findById(id);
     if (!ministry) {
       return res.status(404).json({ message: "Ministry not found" });
+    }
+
+    // Ensure the ministry belongs to the same local church as the logged-in user
+    if (!ministry.localChurch.equals(userLocalChurch)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: Ministry does not belong to your local church",
+      });
     }
 
     ministry.members = ministry.members || []; // Ensure members array is initialized
@@ -356,6 +394,19 @@ export const removeMembersFromMinistry = async (
     });
 
     await Promise.all(updates);
+
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Ministry",
+      documentId: ministry._id,
+      data: {
+        prevData: ministry.toObject(),
+        newData: { members: membersToRemove },
+      },
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res.status(200).json({
       success: true,
