@@ -231,10 +231,6 @@ export const createCouncilSchema = Joi.object({
 export const updateCouncilSchema = Joi.object({
   startYear: Joi.date().optional(),
   endYear: Joi.date().optional(),
-  localChurch: Joi.string().required().messages({
-    "string.base": "Local Church must be a string",
-    "any.required": "Local Church is required",
-  }),
   administrativeOffice: administrativeOfficeSchema.optional(),
   nurture: nurtureSchema.optional(),
   outreach: outreachSchema.optional(),

@@ -6,14 +6,27 @@ import { handleError } from "../utils/handleError";
 import Council from "../models/Council";
 import Membership from "../models/Membership";
 import Counter from "../models/Counter";
+import { AuthenticatedRequest } from "../middleware/authorize";
+import Log from "../models/Logs";
 
 // [CONTROLLERS]
 // Get all council
-export const getAllCouncil = async (req: Request, res: Response) => {
+export const getAllCouncil = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { year } = req.query;
+  const userLocalChurch = req.user?.localChurch;
 
   try {
     const pipeline: any[] = [];
+
+    // Filter councils by the user's local church
+    pipeline.push({
+      $match: {
+        localChurch: userLocalChurch,
+      },
+    });
 
     // If a year is provided, filter councils by startYear or endYear
     if (year) {
@@ -516,7 +529,10 @@ export const getAllCouncil = async (req: Request, res: Response) => {
 };
 
 // Create a new council
-export const createCouncil = async (req: Request, res: Response) => {
+export const createCouncil = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const {
     startYear,
     endYear,
@@ -531,6 +547,17 @@ export const createCouncil = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
+    const userLocalChurch = req.user?.localChurch;
+
+    // Ensure the localChurch field matches the logged-in user's localChurch
+    if (localChurch !== userLocalChurch?.toString()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: localChurch does not match the logged-in user's localChurch",
+      });
+    }
+
     // Validate that endYear is greater than startYear and at least 1 year apart
     const startDate = new Date(startYear);
     const endDate = new Date(endYear);
@@ -649,6 +676,16 @@ export const createCouncil = async (req: Request, res: Response) => {
     const council = new Council({ ...req.body, customId });
     const newCouncil = await council.save();
 
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "Council",
+      documentId: newCouncil._id,
+      data: newCouncil.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(201).json(newCouncil);
   } catch (err) {
     handleError(res, err, "An error occurred while creating council");
@@ -656,11 +693,15 @@ export const createCouncil = async (req: Request, res: Response) => {
 };
 
 // Get council by id
-export const getCouncilById = async (req: Request, res: Response) => {
+export const getCouncilById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const council = await Council.findById(id)
       .populate("localChurch", "name")
+
       // Administrative Office Populates
       .populate("administrativeOffice.chairperson", "name")
       .populate("administrativeOffice.layLeader", "name")
@@ -710,6 +751,15 @@ export const getCouncilById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Council not found" });
     }
 
+    // Ensure the council belongs to the same local church as the logged-in user
+    if (!council.localChurch.equals(req.user?.localChurch)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: Council does not belong to your local church",
+      });
+    }
+
     res.status(200).json({ success: true, data: council });
   } catch (err) {
     handleError(res, err, "An error occurred while getting council");
@@ -717,14 +767,16 @@ export const getCouncilById = async (req: Request, res: Response) => {
 };
 
 // Update local church by id
-export const updateCouncil = async (req: Request, res: Response) => {
+export const updateCouncil = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const {
       startYear,
       endYear,
       administrativeOffice,
-      localChurch,
       nurture,
       outreach,
       witness,
@@ -733,12 +785,23 @@ export const updateCouncil = async (req: Request, res: Response) => {
       finance,
     } = req.body;
 
+    const userLocalChurch = req.user?.localChurch;
+
     // Check if the council with the provided ID exists
     const existingCouncilById = await Council.findById(id);
     if (!existingCouncilById) {
       return res.status(404).json({
         success: false,
         message: "Council not found with the provided ID.",
+      });
+    }
+
+    // Ensure the council belongs to the same local church as the logged-in user
+    if (!existingCouncilById.localChurch.equals(userLocalChurch)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: Council does not belong to your local church",
       });
     }
 
@@ -768,7 +831,7 @@ export const updateCouncil = async (req: Request, res: Response) => {
       _id: { $ne: id }, // Exclude the current council being updated
       startYear,
       endYear,
-      localChurch,
+      localChurch: existingCouncilById.localChurch,
     });
 
     if (existingCouncil) {
@@ -837,7 +900,9 @@ export const updateCouncil = async (req: Request, res: Response) => {
 
     // Ensure that all members belong to the same local church
     const allMembersBelongToSameChurch = members.every(
-      (member) => member.localChurch.toString() === localChurch
+      (member) =>
+        member.localChurch.toString() ===
+        existingCouncilById.localChurch.toString()
     );
 
     if (!allMembersBelongToSameChurch) {
@@ -856,6 +921,16 @@ export const updateCouncil = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Council not found" });
     }
 
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Council",
+      documentId: updateCouncil._id,
+      data: updateCouncil.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(200).json({ success: true, data: updateCouncil });
   } catch (err) {
     handleError(res, err, "An error occurred while updating council");
@@ -863,20 +938,56 @@ export const updateCouncil = async (req: Request, res: Response) => {
 };
 
 // Delete council
-export const deleteCouncil = async (req: Request, res: Response) => {
+export const deleteCouncil = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
-    const deleteCouncil = await Council.findByIdAndDelete(id);
+    const userLocalChurch = req.user?.localChurch;
 
-    if (!deleteCouncil) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Council not found" });
+    // Check if the council with the provided ID exists
+    const existingCouncil = await Council.findById(id);
+    if (!existingCouncil) {
+      return res.status(404).json({
+        success: false,
+        message: "Council not found with the provided ID.",
+      });
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Council deleted successfully" });
+    // Ensure the council belongs to the same local church as the logged-in user
+    if (!existingCouncil.localChurch.equals(userLocalChurch)) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: Council does not belong to your local church",
+      });
+    }
+
+    // Delete the council
+    const deletedCouncil = await Council.findByIdAndDelete(id);
+
+    if (!deletedCouncil) {
+      return res.status(404).json({
+        success: false,
+        message: "Council not found",
+      });
+    }
+
+    // Log the action done
+    await Log.create({
+      action: "deleted",
+      collection: "Council",
+      documentId: deletedCouncil._id,
+      data: deletedCouncil.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Council deleted successfully",
+    });
   } catch (err) {
     handleError(res, err, "An error occurred while deleting council");
   }
