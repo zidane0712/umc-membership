@@ -9,6 +9,7 @@ import District from "../models/District";
 import Annual from "../models/Annual";
 import Counter from "../models/Counter";
 import { AuthenticatedRequest } from "../middleware/authorize";
+import Log from "../models/Logs";
 
 interface PopulatedDistrict {
   _id: Types.ObjectId;
@@ -95,23 +96,6 @@ export const getAllLocalChurch = async (
         },
       },
     ];
-
-    // Restrict data based on user role
-    if (req.user?.role === "annual") {
-      pipeline.push({
-        $match: {
-          "district.annualConference._id": req.user.annual,
-        },
-      });
-    }
-
-    if (req.user?.role === "district") {
-      pipeline.push({
-        $match: {
-          "district._id": req.user.district,
-        },
-      });
-    }
 
     // Add episcopalArea filter if provided
     if (episcopalArea) {
@@ -201,7 +185,10 @@ export const getAllLocalChurch = async (
 };
 
 // Create a new local church
-export const createLocalChurch = async (req: Request, res: Response) => {
+export const createLocalChurch = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { name, district } = req.body;
 
   try {
@@ -232,6 +219,16 @@ export const createLocalChurch = async (req: Request, res: Response) => {
     // If it doesn't exist, create a new one
     const localChurch = new Local({ ...req.body, customId });
     const newLocalChurch = await localChurch.save();
+
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "Local",
+      documentId: newLocalChurch._id,
+      data: newLocalChurch.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res.status(201).json(newLocalChurch);
   } catch (err) {
@@ -301,16 +298,18 @@ export const getLocalChurchById = async (
 };
 
 // Update local church by ID
-export const updateLocalChurch = async (req: Request, res: Response) => {
+export const updateLocalChurch = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
-    const { name, district, annualConference } = req.body;
+    const { name, district } = req.body;
 
     // Check if there's another local church with same name, district, and annual conference
     const existingLocalChurch = await Local.findOne({
       name,
       district,
-      annualConference,
       _id: { $ne: id },
     });
 
@@ -318,13 +317,6 @@ export const updateLocalChurch = async (req: Request, res: Response) => {
       return res.status(409).json({
         success: false,
         message: "A local church with this name and district already exists.",
-      });
-    }
-
-    if (!existingLocalChurch) {
-      return res.status(404).json({
-        success: false,
-        message: "Local Church not found with the provided ID.",
       });
     }
 
@@ -338,22 +330,35 @@ export const updateLocalChurch = async (req: Request, res: Response) => {
       }
     }
 
-    const updateLocal = await Local.findByIdAndUpdate(id, req.body, {
+    const updatedLocal = await Local.findByIdAndUpdate(id, req.body, {
       new: true,
     });
 
-    if (!updateLocal) {
+    if (!updatedLocal) {
       return res.status(404).json({ message: "Local Church not found" });
     }
 
-    res.status(200).json(updateLocal);
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Local",
+      documentId: updatedLocal._id,
+      data: updatedLocal.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
+    res.status(200).json(updatedLocal);
   } catch (err) {
     handleError(res, err, "An error occurred while updating local church");
   }
 };
 
 // Delete a Local church
-export const deleteLocalChurch = async (req: Request, res: Response) => {
+export const deleteLocalChurch = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const deleteLocal = await Local.findByIdAndDelete(id);
@@ -363,6 +368,16 @@ export const deleteLocalChurch = async (req: Request, res: Response) => {
         .status(404)
         .json({ success: false, message: "Local not found" });
     }
+
+    // Log the action done
+    await Log.create({
+      action: "deleted",
+      collection: "Local",
+      documentId: deleteLocal._id,
+      data: deleteLocal.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res
       .status(200)

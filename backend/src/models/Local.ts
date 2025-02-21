@@ -71,46 +71,6 @@ localSchema.pre("save", async function (next) {
   }
 });
 
-localSchema.post("save", async function (doc) {
-  const localId = doc?._id;
-  await Log.create({
-    action: "created",
-    collection: "Local",
-    documentId: localId,
-    data: doc.toObject(),
-    timestamp: new Date(),
-  });
-});
-
-localSchema.post("findOneAndUpdate", async function (doc) {
-  if (doc) {
-    // Fetch previous data before update
-    const prevData = doc.toObject();
-
-    await Log.create({
-      action: "updated",
-      collection: "Local",
-      documentId: doc._id,
-      data: { prevData, newData: this.getUpdate() },
-      performedBy: this.getQuery()._id,
-      timestamp: new Date(),
-    });
-  }
-});
-
-localSchema.post("findOneAndDelete", async function (doc) {
-  if (doc) {
-    await Log.create({
-      action: "deleted",
-      collection: "Local",
-      documentId: doc._id,
-      data: doc.toObject(),
-      performedBy: this.getQuery()._id,
-      timestamp: new Date(),
-    });
-  }
-});
-
 // [EXPORT]
 const Local = model<ILocal>("Local", localSchema);
 export default Local;
