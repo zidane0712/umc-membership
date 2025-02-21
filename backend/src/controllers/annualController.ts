@@ -5,6 +5,8 @@ import { Request, Response } from "express";
 import { handleError } from "../utils/handleError";
 import Annual from "../models/Annual";
 import Counter from "../models/Counter";
+import Log from "../models/Logs";
+import { AuthenticatedRequest } from "../middleware/authorize";
 
 // [CONTROLLERS]
 // Gets all annual conferences
@@ -39,7 +41,10 @@ export const getAllAnnual = async (req: Request, res: Response) => {
 };
 
 // Add a new annual conference
-export const createAnnual = async (req: Request, res: Response) => {
+export const createAnnual = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { name, episcopalArea } = req.body;
 
   try {
@@ -70,6 +75,16 @@ export const createAnnual = async (req: Request, res: Response) => {
     const annualConference = new Annual({ ...req.body, customId });
     const newAnnualConference = await annualConference.save();
 
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "Annual",
+      documentId: newAnnualConference._id,
+      data: newAnnualConference.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(201).json(newAnnualConference);
   } catch (err) {
     handleError(res, err, "An error occurred while creating annual conference");
@@ -96,7 +111,10 @@ export const getAnnualById = async (req: Request, res: Response) => {
 };
 
 // Update an annual conference by ID
-export const updateAnnual = async (req: Request, res: Response) => {
+export const updateAnnual = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const { name, episcopalArea } = req.body;
@@ -116,13 +134,6 @@ export const updateAnnual = async (req: Request, res: Response) => {
       });
     }
 
-    if (!existingAnnualConference) {
-      return res.status(404).json({
-        success: false,
-        message: "Annual Conference not found with the provided ID.",
-      });
-    }
-
     const updateAnnual = await Annual.findByIdAndUpdate(id, req.body, {
       new: true,
     });
@@ -133,6 +144,16 @@ export const updateAnnual = async (req: Request, res: Response) => {
         .json({ success: false, message: "Annual Conference not found" });
     }
 
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Annual",
+      documentId: updateAnnual._id,
+      data: updateAnnual.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(200).json({ success: true, data: updateAnnual });
   } catch (err) {
     handleError(res, err, "An error occurred while updating annual conference");
@@ -140,7 +161,10 @@ export const updateAnnual = async (req: Request, res: Response) => {
 };
 
 // Delete an Annual Conference by ID
-export const deleteAnnual = async (req: Request, res: Response) => {
+export const deleteAnnual = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
 
@@ -151,6 +175,16 @@ export const deleteAnnual = async (req: Request, res: Response) => {
         .status(404)
         .json({ success: false, message: "Annual Conference not found" });
     }
+
+    // Log the action done
+    await Log.create({
+      action: "deleted",
+      collection: "Annual",
+      documentId: deletedAnnual._id,
+      data: deletedAnnual.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res.status(200).json({
       success: true,

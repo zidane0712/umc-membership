@@ -48,47 +48,6 @@ annualSchema.pre("save", async function (next) {
   }
 });
 
-annualSchema.post("save", async function (doc) {
-  const annualId = doc?._id;
-  await Log.create({
-    action: "created",
-    collection: "Annual",
-    documentId: annualId,
-    data: doc.toObject(),
-    performedBy: doc._id,
-    timestamp: new Date(),
-  });
-});
-
-annualSchema.post("findOneAndUpdate", async function (doc) {
-  if (doc) {
-    // Fetch previous data before update
-    const prevData = doc.toObject();
-
-    await Log.create({
-      action: "updated",
-      collection: "Annual",
-      documentId: doc._id,
-      data: { prevData, newData: this.getUpdate() },
-      performedBy: this.getQuery()._id,
-      timestamp: new Date(),
-    });
-  }
-});
-
-annualSchema.post("findOneAndDelete", async function (doc) {
-  if (doc) {
-    await Log.create({
-      action: "deleted",
-      collection: "Annual",
-      documentId: doc._id,
-      data: doc.toObject(),
-      performedBy: this.getQuery()._id,
-      timestamp: new Date(),
-    });
-  }
-});
-
 // [INDEX]
 annualSchema.index({ episcopalArea: 1 });
 
