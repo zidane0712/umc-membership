@@ -24,7 +24,10 @@ const router = express.Router();
 // [ROUTES]
 router
   .route("/")
-  .get(authorize(["admin", "annual"], true), asyncHandler(getAllDistrict))
+  .get(
+    authorize(["admin", "annual", "district", "local"]),
+    asyncHandler(getAllDistrict)
+  )
   .post(
     authorize(["admin"], true),
     validate(createDistrictSchema),
@@ -36,7 +39,10 @@ router
 
 router
   .route("/:id")
-  .get(authorize(["admin", "annual"], true), asyncHandler(getDistrictById))
+  .get(
+    authorize(["admin", "annual", "district", "local"], true),
+    asyncHandler(getDistrictById)
+  )
   .put(
     authorize(["admin"]),
     validate(updateDistrictSchema),

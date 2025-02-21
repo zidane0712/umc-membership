@@ -7,13 +7,11 @@ import District from "../models/District";
 import Annual from "../models/Annual";
 import Counter from "../models/Counter";
 import { AuthenticatedRequest } from "../middleware/authorize";
+import Log from "../models/Logs";
 
 // [CONTROLLERS]
 // Gets all district
-export const getAllDistrict = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
+export const getAllDistrict = async (req: Request, res: Response) => {
   try {
     const { episcopalArea, search, page = 1, limit = 10 } = req.query;
 
@@ -44,15 +42,6 @@ export const getAllDistrict = async (
         },
       },
     ];
-
-    // Restrict data based on user role
-    if (req.user?.role === "annual") {
-      pipeline.push({
-        $match: {
-          "annualConference._id": req.user.annual,
-        },
-      });
-    }
 
     // Add episcopalArea filter if provided
     if (episcopalArea) {
@@ -114,7 +103,10 @@ export const getAllDistrict = async (
 };
 
 // Create a new district
-export const createDistrict = async (req: Request, res: Response) => {
+export const createDistrict = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { name, annualConference } = req.body;
 
   try {
@@ -145,6 +137,16 @@ export const createDistrict = async (req: Request, res: Response) => {
     const districtConference = new District({ ...req.body, customId });
     const newDistrict = await districtConference.save();
 
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "District",
+      documentId: newDistrict._id,
+      data: newDistrict.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(201).json(newDistrict);
   } catch (err) {
     handleError(
@@ -156,10 +158,7 @@ export const createDistrict = async (req: Request, res: Response) => {
 };
 
 // Get a single district by ID
-export const getDistrictById = async (
-  req: AuthenticatedRequest,
-  res: Response
-) => {
+export const getDistrictById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -177,18 +176,6 @@ export const getDistrictById = async (
       });
     }
 
-    // Role-based restriction: Check if the user is authorized to access this district
-    if (
-      req.user?.role === "annual" &&
-      district.annualConference._id.toString() !== req.user.annual?.toString()
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Access denied: You are not authorized to access this district",
-      });
-    }
-
     res.status(200).json({
       success: true,
       data: district,
@@ -203,12 +190,14 @@ export const getDistrictById = async (
 };
 
 // Update district by ID
-export const updateDistrict = async (req: Request, res: Response) => {
+export const updateDistrict = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const { name, annualConference } = req.body;
 
-    // Check if the district with the provided ID exists
     const existingDistrict = await District.findById(id);
     if (!existingDistrict) {
       return res.status(404).json({
@@ -241,12 +230,22 @@ export const updateDistrict = async (req: Request, res: Response) => {
       }
     }
 
-    const updateDistrict = await District.findByIdAndUpdate(id, req.body, {
+    const updatedDistrict = await District.findByIdAndUpdate(id, req.body, {
       new: true,
     });
-    if (!updateDistrict) {
-      return res.status(404).json({ message: "Membership not found" });
+    if (!updatedDistrict) {
+      return res.status(404).json({ message: "District not found" });
     }
+
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "District",
+      documentId: updatedDistrict._id,
+      data: updatedDistrict.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res.status(200).json(updateDistrict);
   } catch (err) {
@@ -259,7 +258,10 @@ export const updateDistrict = async (req: Request, res: Response) => {
 };
 
 // Delete a district
-export const deleteDistrict = async (req: Request, res: Response) => {
+export const deleteDistrict = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
 
@@ -272,13 +274,23 @@ export const deleteDistrict = async (req: Request, res: Response) => {
       });
     }
 
-    const deleteDistrict = await District.findByIdAndDelete(id);
+    const deletedDistrict = await District.findByIdAndDelete(id);
 
-    if (!deleteDistrict) {
+    if (!deletedDistrict) {
       return res
         .status(404)
         .json({ success: false, message: "District not found" });
     }
+
+    // Log the action done
+    await Log.create({
+      action: "deleted",
+      collection: "District",
+      documentId: deletedDistrict._id,
+      data: deletedDistrict.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
 
     res
       .status(200)
