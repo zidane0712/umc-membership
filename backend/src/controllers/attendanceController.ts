@@ -8,6 +8,7 @@ import Attendance from "../models/Attendance";
 import Counter from "../models/Counter";
 import { AuthenticatedRequest } from "../middleware/authorize";
 import Local from "../models/Local";
+import Log from "../models/Logs";
 
 // [CONTROLLERS]
 // Get all attendance
@@ -140,11 +141,29 @@ export const getAllAttendance = async (
 };
 
 // Create new attendance
-export const createAttendance = async (req: Request, res: Response) => {
-  const { date, activityName, description, localChurch, totalAttendees, tags } =
-    req.body;
-
+export const createAttendance = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const {
+      date,
+      activityName,
+      description,
+      localChurch,
+      totalAttendees,
+      tags,
+    } = req.body;
+
+    // Ensure localChurch field matches the logged-in user's local church
+    if (localChurch !== req.user?.localChurch?.toString()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: You can only create attendance for your own local church",
+      });
+    }
+
     // Check if date is in the future
     if (date && new Date(date) > new Date()) {
       return res.status(400).json({
@@ -191,6 +210,17 @@ export const createAttendance = async (req: Request, res: Response) => {
 
     // Save the attendance and respond
     const newAttendance = await attendance.save();
+
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "Attendance",
+      documentId: newAttendance._id,
+      data: newAttendance.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(201).json({
       success: true,
       data: newAttendance,
@@ -237,7 +267,10 @@ export const getAttendanceById = async (
 };
 
 // Update an attendance by id
-export const updateAttendance = async (req: Request, res: Response) => {
+export const updateAttendance = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { id } = req.params;
   const { date, activityName, description, localChurch, totalAttendees, tags } =
     req.body;
@@ -250,6 +283,15 @@ export const updateAttendance = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: "Attendance not found with the provided id.",
+      });
+    }
+
+    // Ensure localChurch field matches the logged-in user's local church
+    if (localChurch !== req.user?.localChurch?.toString()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: You can only update attendance for your own local church.",
       });
     }
 
@@ -290,6 +332,16 @@ export const updateAttendance = async (req: Request, res: Response) => {
         .json({ success: false, message: "Attendance not found" });
     }
 
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Attendance",
+      documentId: updatedAttendance._id,
+      data: updatedAttendance.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(200).json({
       success: true,
       data: updatedAttendance,
@@ -300,21 +352,59 @@ export const updateAttendance = async (req: Request, res: Response) => {
 };
 
 // Delete attendance
-export const deleteAttendance = async (req: Request, res: Response) => {
+export const deleteAttendance = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
+
+    // Check if the attendance with the provided ID exists
+    const existingAttendance = await Attendance.findById(id);
+    if (!existingAttendance) {
+      return res.status(404).json({
+        success: false,
+        message: "Attendance not found with the provided ID.",
+      });
+    }
+
+    // Ensure the localChurch field matches the logged-in user's localChurch
+    if (
+      existingAttendance.localChurch.toString() !==
+      req.user?.localChurch?.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: You can only delete attendance for your own local church.",
+      });
+    }
+
+    // Delete the attendance
     const deleteAttendance = await Attendance.findByIdAndDelete(id);
 
     if (!deleteAttendance) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Attendance not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Attendance not found",
+      });
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Attendance deleted successfully" });
+    // Log the action done
+    await Log.create({
+      action: "deleted",
+      collection: "Attendance",
+      documentId: deleteAttendance._id,
+      data: deleteAttendance.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Attendance deleted successfully",
+    });
   } catch (err) {
-    handleError(res, err, "An error occurred while deleting attendace");
+    handleError(res, err, "An error occurred while deleting attendance");
   }
 };
