@@ -8,12 +8,21 @@ import Family from "../models/Family";
 import Membership from "../models/Membership";
 import Counter from "../models/Counter";
 import { IMembership } from "../models/Membership";
+import { AuthenticatedRequest } from "../middleware/authorize";
+import Log from "../models/Logs";
 
 // [CONTROLLERS]
 // Get all family
-export const getAllFamily = async (req: Request, res: Response) => {
+export const getAllFamily = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
-    const { anniversaryMonth, search } = req.query;
+    const { anniversaryMonth, search, page = 1, limit = 10 } = req.query;
+
+    // Convert pagination params to numbers
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
 
     const anniversaryMonthInt =
       typeof anniversaryMonth === "string"
@@ -21,6 +30,11 @@ export const getAllFamily = async (req: Request, res: Response) => {
         : undefined;
 
     const pipeline: any[] = [
+      {
+        $match: {
+          localChurch: req.user?.localChurch,
+        },
+      },
       {
         $lookup: {
           from: "memberships",
@@ -111,20 +125,58 @@ export const getAllFamily = async (req: Request, res: Response) => {
       });
     }
 
+    pipeline.push({
+      $sort: { familyName: 1 },
+    });
+
+    pipeline.push({ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum });
+
     const families = await Family.aggregate(pipeline);
 
-    res.status(200).json({ success: true, data: families });
+    // Get total count for pagination metadata
+    const totalCountPipeline = pipeline.filter(
+      (stage) => !("$skip" in stage || "$limit" in stage)
+    );
+    const totalCount = await Family.aggregate([
+      ...totalCountPipeline,
+      { $count: "total" },
+    ]);
+
+    const count = totalCount[0]?.total || 0;
+
+    res.status(200).json({
+      success: true,
+      data: families,
+      meta: {
+        total: count,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(count / limitNum),
+      },
+    });
   } catch (err) {
     handleError(res, err, "An error occurred while getting all families");
   }
 };
 
 // Create a family
-export const createFamily = async (req: Request, res: Response) => {
-  const { familyName, father, mother, weddingDate, children, localChurch } =
-    req.body;
-
+export const createFamily = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    const { familyName, father, mother, weddingDate, children, localChurch } =
+      req.body;
+
+    // Ensure the localChurch filed matches the logged-in user's localChurch
+    if (localChurch !== req.user?.localChurch?.toString()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: You can only create a family for your own local church",
+      });
+    }
+
     // Ensure at least one of father, mother, or children is provided
     if (!father && !mother && (!children || children.length === 0)) {
       return res.status(400).json({
@@ -217,6 +269,17 @@ export const createFamily = async (req: Request, res: Response) => {
 
     // Save the family and respond
     const newFamily = await family.save();
+
+    // Log the action done
+    await Log.create({
+      action: "created",
+      collection: "Family",
+      documentId: newFamily._id,
+      data: newFamily.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(201).json({
       success: true,
       data: newFamily,
@@ -227,7 +290,10 @@ export const createFamily = async (req: Request, res: Response) => {
 };
 
 // Get family by id
-export const getFamilyById = async (req: Request, res: Response) => {
+export const getFamilyById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
     const family = await Family.findById(id)
@@ -240,6 +306,17 @@ export const getFamilyById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Family not found" });
     }
 
+    // Ensure the family belongs to the same local church as the logged-in user
+    if (
+      family.localChurch._id.toString() !== req.user?.localChurch?.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: You can only view families in your local church",
+      });
+    }
+
     res.status(200).json({ success: true, data: family });
   } catch (err) {
     handleError(res, err, "An error occurred while getting family");
@@ -247,7 +324,10 @@ export const getFamilyById = async (req: Request, res: Response) => {
 };
 
 // Update family by id
-export const updateFamily = async (req: Request, res: Response) => {
+export const updateFamily = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   const { id } = req.params;
   const { familyName, father, mother, weddingDate, children, localChurch } =
     req.body;
@@ -259,6 +339,18 @@ export const updateFamily = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: "Family not found with the provided ID.",
+      });
+    }
+
+    // Ensure the localChurch field matches the logged-in user's localChurch
+    if (
+      existingFamilyById.localChurch.toString() !==
+      req.user?.localChurch?.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: You can only update families in your own local church.",
       });
     }
 
@@ -323,18 +415,6 @@ export const updateFamily = async (req: Request, res: Response) => {
       }
     }
 
-    // Ensure all members belong to the same local church
-    const allMembersBelongToSameChurch = members.every(
-      (member) => member.localChurch.toString() === localChurch
-    );
-
-    if (!allMembersBelongToSameChurch) {
-      return res.status(400).json({
-        success: false,
-        message: "All members must belong to the same local church.",
-      });
-    }
-
     // Check for existing family in the same local church with the same name
     const existingFamily = await Family.findOne({
       _id: { $ne: id },
@@ -363,6 +443,16 @@ export const updateFamily = async (req: Request, res: Response) => {
         .json({ success: false, message: "Family not found" });
     }
 
+    // Log the action done
+    await Log.create({
+      action: "updated",
+      collection: "Family",
+      documentId: updatedFamily._id,
+      data: updatedFamily.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
     res.status(200).json({
       success: true,
       data: updatedFamily,
@@ -372,21 +462,59 @@ export const updateFamily = async (req: Request, res: Response) => {
   }
 };
 
-// Delete council
-export const deleteFamily = async (req: Request, res: Response) => {
+// Delete family
+export const deleteFamily = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { id } = req.params;
-    const deleteFamily = await Family.findByIdAndDelete(id);
 
-    if (!deleteFamily) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Family not found" });
+    // Check if the family with the provided ID exists
+    const existingFamily = await Family.findById(id);
+    if (!existingFamily) {
+      return res.status(404).json({
+        success: false,
+        message: "Family not found with the provided ID.",
+      });
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Family deleted successfully" });
+    // Ensure the localChurch field matches the logged-in user's localChurch
+    if (
+      existingFamily.localChurch.toString() !==
+      req.user?.localChurch?.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Unauthorized access: You can only delete families in your own local church.",
+      });
+    }
+
+    // Delete the family
+    const deletedFamily = await Family.findByIdAndDelete(id);
+
+    if (!deletedFamily) {
+      return res.status(404).json({
+        success: false,
+        message: "Family not found",
+      });
+    }
+
+    // Log the action done
+    await Log.create({
+      action: "deleted",
+      collection: "Family",
+      documentId: deletedFamily._id,
+      data: deletedFamily.toObject(),
+      performedBy: req.user?._id,
+      timestamp: new Date(),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Family deleted successfully",
+    });
   } catch (err) {
     handleError(res, err, "An error occurred while deleting family");
   }
