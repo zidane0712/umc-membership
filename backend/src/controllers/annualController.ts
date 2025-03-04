@@ -7,12 +7,17 @@ import Annual from "../models/Annual";
 import Counter from "../models/Counter";
 import Log from "../models/Logs";
 import { AuthenticatedRequest } from "../middleware/authorize";
+import { parse } from "path";
 
 // [CONTROLLERS]
 // Gets all annual conferences
 export const getAllAnnual = async (req: Request, res: Response) => {
   try {
-    const { episcopalArea, search } = req.query;
+    const { episcopalArea, search, page = 1, limit = 10 } = req.query;
+
+    // Convert pagination params to numbers
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
 
     // Define a filter object, initially empty
     const filter: { [key: string]: any } = {};
@@ -28,9 +33,22 @@ export const getAllAnnual = async (req: Request, res: Response) => {
     }
 
     // Fetch the annual conferences based on the filter
-    const annualConferences = await Annual.find(filter);
+    const annualConferences = await Annual.find(filter)
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum);
 
-    res.status(200).json({ success: true, data: annualConferences });
+    const totalCount = await Annual.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      data: annualConferences,
+      meta: {
+        total: totalCount,
+        page: pageNum,
+        limit: limitNum,
+        totalPage: Math.ceil(totalCount / limitNum),
+      },
+    });
   } catch (err) {
     handleError(
       res,

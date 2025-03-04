@@ -29,7 +29,7 @@ router
     asyncHandler(getAllDistrict)
   )
   .post(
-    authorize(["admin"], true),
+    authorize(["admin"]),
     validate(createDistrictSchema),
     validateAnnualConference,
     asyncHandler(createDistrict)
@@ -40,7 +40,7 @@ router
 router
   .route("/:id")
   .get(
-    authorize(["admin", "annual", "district", "local"], true),
+    authorize(["admin", "annual", "district", "local"]),
     asyncHandler(getDistrictById)
   )
   .put(
