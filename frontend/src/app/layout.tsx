@@ -25,10 +25,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
             {/* Top Navigation Bar */}
-            <nav className="flex items-center justify-between h-20 text-white shadow-md">
-              <div className="flex items-center gap-4 !m-6">
-                <p className="text-xl font-league mis-title tracking-wide">
-                  UNITED METHODIST CHURCH MEMBERSHIP INFORMATION SYSTEM
+            <nav className="flex items-center justify-between h-25 text-white shadow-md">
+              <div className=" items-center gap-4 !ml-6">
+                <p className="text-xl font-league mis-title tracking-wider !pt-5">
+                  United Methodist Church
+                </p>
+                <p className="mis-title text-4xl !pb-5">
+                  MEMBERSHIP INFORMATION SYSTEM
                 </p>
               </div>
               <div className="flex items-center gap-4 !m-6">
