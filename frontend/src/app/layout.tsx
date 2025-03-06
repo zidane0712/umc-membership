@@ -25,15 +25,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <body className="min-h-screen bg-gray-100">
         <div className="flex">
-          {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
             <Navbar />
 
-            {/* Main Content */}
             <div className="flex flex-1 p-6">
-              {/* Sidebar (Dashboard) */}
               <Sidebar isSidebarOpen={isSidebarOpen} />
-              {/* Main Section (Membership System) */}
               <MainContent>{children}</MainContent>
             </div>
           </div>
