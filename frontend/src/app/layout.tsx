@@ -1,41 +1,37 @@
 "use client";
 import "./globals.css";
 import { useState } from "react";
-import Image from "next/image";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=League+Gothic&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+
       <body className="min-h-screen bg-gray-100">
         <div className="flex">
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
             {/* Top Navigation Bar */}
-            <nav
-              className="flex items-center justify-between h-16 bg-[#0D0D0D] text-white shadow-md"
-              style={{ paddingLeft: "16px", paddingRight: "16px" }}
-            >
-              <div
-                className="flex items-center gap-4"
-                style={{ marginLeft: "16px" }}
-              >
-                <a>
-                  <Image
-                    alt="UMC Membership Profile"
-                    src="/favicon.ico"
-                    width={32}
-                    height={32}
-                    className="h-8 w-8"
-                  />
-                </a>
-                <p>United Methodist Church Membership System</p>
+            <nav className="flex items-center justify-between h-20 text-white shadow-md">
+              <div className="flex items-center gap-4 !m-6">
+                <p className="text-xl font-league mis-title tracking-wide">
+                  UNITED METHODIST CHURCH MEMBERSHIP INFORMATION SYSTEM
+                </p>
               </div>
-              <div
-                className="flex items-center gap-4 mr-4"
-                style={{ marginRight: "16px" }}
-              >
+              <div className="flex items-center gap-4 !m-6">
                 <p className="text-md">Welcome, John Doe</p>
                 <button className="bg-white text-blue-600 px-3 py-1 rounded-md">
                   Logout
@@ -44,7 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </nav>
 
             {/* Main Content */}
-            <div className="flex flex-1 p-16">
+            <div className="flex flex-1 p-6">
               {/* Sidebar (Dashboard) */}
               <aside
                 className={`w-64 bg-white shadow-md h-screen transition-transform transform ${
