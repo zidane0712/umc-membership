@@ -1,6 +1,7 @@
 "use client";
 import "./globals.css";
 import { useState } from "react";
+import Image from "next/image";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -20,10 +21,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-4"
                 style={{ marginLeft: "16px" }}
               >
-                <a href="#">
-                  <img
+                <a>
+                  <Image
                     alt="UMC Membership Profile"
-                    src="./favicon.ico"
+                    src="/favicon.ico"
+                    width={32}
+                    height={32}
                     className="h-8 w-8"
                   />
                 </a>
