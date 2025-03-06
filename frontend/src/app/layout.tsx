@@ -12,10 +12,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
             {/* Top Navigation Bar */}
-            <nav className="flex justify-between items-center p-4 bg-blue-600 text-white shadow-md">
-              <h1 className="text-lg font-bold">Church Membership System</h1>
-              <div className="flex items-center gap-4">
-                <p className="text-sm">Welcome, John Doe</p>
+            <nav
+              className="flex items-center justify-between h-16 bg-[#0D0D0D] text-white shadow-md"
+              style={{ paddingLeft: "16px", paddingRight: "16px" }}
+            >
+              <div
+                className="flex items-center gap-4"
+                style={{ marginLeft: "16px" }}
+              >
+                <a href="#">
+                  <img
+                    alt="UMC Membership Profile"
+                    src="./favicon.ico"
+                    className="h-8 w-8"
+                  />
+                </a>
+                <p>United Methodist Church Membership System</p>
+              </div>
+              <div
+                className="flex items-center gap-4 mr-4"
+                style={{ marginRight: "16px" }}
+              >
+                <p className="text-md">Welcome, John Doe</p>
                 <button className="bg-white text-blue-600 px-3 py-1 rounded-md">
                   Logout
                 </button>
@@ -23,7 +41,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </nav>
 
             {/* Main Content */}
-            <div className="flex flex-1">
+            <div className="flex flex-1 p-16">
               {/* Sidebar (Dashboard) */}
               <aside
                 className={`w-64 bg-white shadow-md h-screen transition-transform transform ${
